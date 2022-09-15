@@ -19,12 +19,12 @@ int main()
 
     //--------------------------------------------//
     //sum//
-    if ((a > 0 & b >0) )
+    if ((a > 0 && b >0) )
     {
         s =abs(a)+abs(b);
         if ( s>INT_MAX) return error();
     }
-    if ((a < 0 & b <0) )
+    if ((a < 0 && b <0) )
     {
         s =abs(a)+abs(b);
         if ( s>abs(INT_MIN)) return error();
@@ -33,12 +33,12 @@ int main()
     printf("%d + %d = %d\n", a, b, a+b);
 
     //--------------------------------------------//
-    if ((a > 0 & b <0) )
+    if ((a > 0 && b <0) )
     {
         s =abs(a)+abs(b);
         if ( s>INT_MAX) return error();
     }
-    if ((a < 0 & b >0) )
+    if ((a < 0 && b >0) )
     {
         s =abs(a)+abs(b);
         if ( s>abs(INT_MIN)) return error();
