@@ -38,13 +38,15 @@ bool isValid(char * n1, unsigned int b1)
 unsigned int convert_decimal (char * n1, unsigned int b1, int * exit)
 {
     unsigned int num=0, size = strlen(n1),z;
+    long tmp;
     for (unsigned int i = size; i>0; --i)
     {
         z=1;
         unsigned int j = i-1;
         while (j>0)
         {
-            if (z > (UINT_MAX/b1))
+            tmp = z*b1;
+            if (tmp>=UINT_MAX)
             {
                 *exit =1;
                 return 0;
@@ -53,8 +55,8 @@ unsigned int convert_decimal (char * n1, unsigned int b1, int * exit)
             j--;
         }
 
-        if( read_char(n1[size-i]) >(UINT_MAX-num)/z)
-        {*exit =1; return 0;}
+ //       if( read_char(n1[size-i]) >(UINT_MAX-num)/z)
+   //     {*exit =1; return 0;}
         num+=read_char(n1[size-i])*z;
     }
 return num;
