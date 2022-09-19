@@ -7,7 +7,7 @@ int error () {
     return 0;
 }
 
-int read_char (char c)
+unsigned int read_char (char c)
 {
 if (c>='0' && c <= '9') return c - '0';
 if (c>='A' && c <= 'Z') return  c - 'A'+10;
@@ -40,17 +40,21 @@ unsigned int convert_decimal (char * n1, unsigned int b1, int * exit)
     unsigned int num=0, size = strlen(n1),z;
     for (unsigned int i = size; i>0; --i)
     {
-        z=1;  long long tmp;
+        z=1;
         unsigned int j = i-1;
         while (j>0)
         {
+            if (z > (UINT_MAX/b1))
+            {
+                *exit =1;
+                return 0;
+            }
             z*=b1;
             j--;
         }
-        tmp = (num+read_char(n1[i])*z);
-        if( tmp >UINT_MAX || tmp <0)
-        {*exit =1; return 0;}
 
+        if( read_char(n1[size-i]) >(UINT_MAX-num)/z)
+        {*exit =1; return 0;}
         num+=read_char(n1[size-i])*z;
     }
 return num;
