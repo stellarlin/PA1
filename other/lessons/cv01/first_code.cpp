@@ -37,8 +37,7 @@ bool isValid(char * n1, unsigned int b1)
 
 unsigned int convert_decimal (char * n1, unsigned int b1, int * exit)
 {
-    unsigned int num=0, size = strlen(n1),z;
-    long tmp;
+    unsigned int num=0, size = strlen(n1),z,tmp;
     for (unsigned int i = size; i>0; --i)
     {
         z=1;
@@ -46,7 +45,7 @@ unsigned int convert_decimal (char * n1, unsigned int b1, int * exit)
         while (j>0)
         {
             tmp = z*b1;
-            if (tmp>=UINT_MAX)
+            if (!tmp)
             {
                 *exit =1;
                 return 0;
@@ -54,9 +53,12 @@ unsigned int convert_decimal (char * n1, unsigned int b1, int * exit)
             z*=b1;
             j--;
         }
-
- //       if( read_char(n1[size-i]) >(UINT_MAX-num)/z)
-   //     {*exit =1; return 0;}
+        tmp = num + read_char(n1[size-i])*z;
+        if (!tmp)
+        {
+            *exit =1;
+            return 0;
+        }
         num+=read_char(n1[size-i])*z;
     }
 return num;
@@ -74,9 +76,13 @@ void reverse ( char * n2)
     }
 }
 
-char * convert_base (char * n2, unsigned int n1, unsigned int b2)
+void convert_base (char * n2, unsigned int n1, unsigned int b2)
 {
     int i = 0;
+    if(n1==0)
+    {
+        n2[i]='0'; i++;
+    }
     while (n1 > 0) {
         n2[i] = write_char(n1 % b2);
         n1 /= b2;
@@ -84,7 +90,6 @@ char * convert_base (char * n2, unsigned int n1, unsigned int b2)
     }
     n2[i] = '\0';
     reverse(n2);
-    return n2;
 }
 int main ()
 {
@@ -98,7 +103,8 @@ int main ()
         || !isValid(n1,b1)) return error();
     num = convert_decimal(n1, b1, &exit);
     if(exit==1)return error();
-    printf ("%s\n", convert_base(n2,num,b2));
+    convert_base(n2,num,b2);
+    printf ("%s\n", n2);
     return 0;
 }
 
