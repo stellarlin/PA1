@@ -1,5 +1,4 @@
 #include <cstdio>
-#include <climits>
 #include <cstring>
 
 int error () {
@@ -7,6 +6,7 @@ int error () {
     return 0;
 }
 
+//precte char, vrati ho jako decimalne cislo
 unsigned int read_char (char c)
 {
 if (c>='0' && c <= '9') return c - '0';
@@ -14,15 +14,18 @@ if (c>='A' && c <= 'Z') return  c - 'A'+10;
 else return c - 'a'+10;
 }
 
+//precte decimalne cislo a vrati cislice jako znak
 char write_char(unsigned int n)
 {
     if (n >=0 && n<=9) return (char)(n + '0');
     else return (char) (n +'A' -10);
 }
 
+//overeni jestli vsechny znaky jsou vhodne pro zvolenou bazi
+//(jestli jsou v mod b1 nebo jestli jsou mezi a-b, A-B nebo 0-9)
+
 bool isValid(char * n1, unsigned int b1)
 {
-    // || n1 >=0 || (b1 ==10 && n2<= UINT_MAX)
     unsigned int num;
     while (*n1!='\0')
     {
@@ -34,36 +37,38 @@ bool isValid(char * n1, unsigned int b1)
     return true;
 }
 
+//prevede retez na decimalni hodnotu, kontrola preteceni UINT_MAX
 
 unsigned int convert_decimal (char * n1, unsigned int b1, int * exit)
 {
-    unsigned int num=0, size = strlen(n1),z,tmp;
+    unsigned int num=0, size = strlen(n1), poverOf,tmp;
     for (unsigned int i = size; i>0; --i)
     {
-        z=1;
+        poverOf=1;
         unsigned int j = i-1;
         while (j>0)
         {
-            tmp = z*b1;
+            tmp = poverOf*b1;
             if (!tmp)
             {
                 *exit =1;
                 return 0;
             }
-            z*=b1;
+            poverOf*=b1;
             j--;
         }
-        tmp = num + read_char(n1[size-i])*z;
+        tmp = num + read_char(n1[size-i])*poverOf;
         if (!tmp)
         {
             *exit =1;
             return 0;
         }
-        num+=read_char(n1[size-i])*z;
+        num+=read_char(n1[size-i])*poverOf;
     }
 return num;
 }
 
+// prohodime prvky vysledku, aby dostat spravne poradi cislic
 void reverse ( char * n2)
 {
     unsigned int len= strlen(n2);
@@ -75,6 +80,8 @@ void reverse ( char * n2)
         n2[len-i-1] = temp;
     }
 }
+
+//prevedeme decimalne cislo na cislo v bazi b2, ulozim ho do retezu n2 a prohodim prvky
 
 void convert_base (char * n2, unsigned int n1, unsigned int b2)
 {
@@ -93,9 +100,10 @@ void convert_base (char * n2, unsigned int n1, unsigned int b2)
 }
 int main ()
 {
-    int exit = 0;
+    int exit = 0; //flag chyby behem converze do decimalnich cisel
     unsigned  int b1, b2, num;
     char n1 [32], n2[32];
+
     printf("Zadejte cislo a dve bazi ve formatu: n1 b1 b2\n");
     if(scanf(" %s %u %u", n1, &b1, &b2)!=3
         || b1 >36 || b1<2
