@@ -108,7 +108,8 @@ int main ()
     if(scanf(" %s %u %u", n1, &b1, &b2)!=3
         || b1 >36 || b1<2
         || b2 >36 || b2<2
-        || !isValid(n1,b1)) return error();
+        || !isValid(n1,b1)
+        || getchar()!='\n') return error();
     num = convert_decimal(n1, b1, &exit);
     if(exit==1)return error();
     convert_base(n2,num,b2);
