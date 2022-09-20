@@ -46,10 +46,10 @@ void temp_table (double temp)
 }
 int main ()
 {
-    double temp = 0; char c = getchar();
+    double temp = 0;
     printf("Teplota:\n");
     if(scanf("%lf", &temp)!=1) return error();
-    if (c!='\n' or EOF) return error();
+    if (getchar()!='\n') return error();
     temp_table(temp);
 
     return 0;
