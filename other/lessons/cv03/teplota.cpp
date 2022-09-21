@@ -66,6 +66,7 @@ int main ()
 {
     double temp = 0;
     char iter, from, to;
+    while(!feof(stdin)) {
         printf("Teplota:\n");
         if (scanf(" %c", &iter) != 1
             || (iter != 'C' && iter != 'T'))
@@ -86,7 +87,8 @@ int main ()
                 convert(temp, from, to);
                 break;
         }
+        printf("\n");
 
-
+    }
     return 0;
 }
