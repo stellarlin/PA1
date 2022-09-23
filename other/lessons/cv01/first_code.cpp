@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <cstring>
+#include <climits>
 
 int error () {
     printf("Nespravny vstup.\n");
@@ -41,15 +42,14 @@ bool isValid(char * n1, unsigned int b1)
 
 unsigned int convert_decimal (char * n1, unsigned int b1, int * exit)
 {
-    unsigned int num=0, size = strlen(n1), poverOf,tmp;
+    unsigned int num=0, size = strlen(n1), poverOf;
     for (unsigned int i = size; i>0; --i)
     {
         poverOf=1;
         unsigned int j = i-1;
         while (j>0)
         {
-            tmp = poverOf*b1;
-            if (!tmp)
+            if (poverOf>UINT_MAX/b1)
             {
                 *exit =1;
                 return 0;
@@ -57,8 +57,7 @@ unsigned int convert_decimal (char * n1, unsigned int b1, int * exit)
             poverOf*=b1;
             j--;
         }
-        tmp = num + read_char(n1[size-i])*poverOf;
-        if (!tmp)
+        if (num >UINT_MAX-read_char(n1[size-i])*poverOf)
         {
             *exit =1;
             return 0;
