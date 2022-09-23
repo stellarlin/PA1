@@ -19,6 +19,6 @@ int main ()
     y/= (e*a-b*d);
     x = e*c - f*b;
     x/=(e*a-b*d);
-    printf ("x = %.2f, y = %.2f", x,y);
+    printf ("x = %.4f, y = %.4f", x,y);
     return 0;
 }

@@ -34,20 +34,26 @@ int main()
 {
     double a =0, b = 0;
     char c;
-    printf("Zadejte vyraz:\n");
-    if(scanf("%lf %c %lf", &a, &c, &b)!=3
-        || (c =='/' && b ==0) || (c =='%' && b ==0)) return error();
+    while(!feof(stdin)) {
+        printf("Zadejte vyraz:\n");
+        if (scanf("%lf %c %lf", &a, &c, &b) != 3
+            || (c == '/' && b == 0) || (c == '%' && b == 0))
+            return error();
 
-    switch (c)
-    {
-        case '+': sum(a,b);
-        break;
-        case '-':  sub(a,b);
-        break;
-        case '/':  divis(a,b);
-        break;
-        case '%':  mod(a,b);
-        break;
+        switch (c) {
+            case '+':
+                sum(a, b);
+                break;
+            case '-':
+                sub(a, b);
+                break;
+            case '/':
+                divis(a, b);
+                break;
+            case '%':
+                mod(a, b);
+                break;
+        }
     }
     return 0;
 }
