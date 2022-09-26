@@ -104,7 +104,7 @@ int main ()
     char n1 [32], n2[32];
 
     printf("Zadejte cislo a dve bazi ve formatu: n1 b1 b2\n");
-    if(scanf(" %s %u %u", n1, &b1, &b2)!=3
+    if(scanf(" %31s %u %u", n1, &b1, &b2)!=3
         || b1 >36 || b1<2
         || b2 >36 || b2<2
         || !isValid(n1,b1)
