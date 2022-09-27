@@ -25,9 +25,9 @@ int main(void)
             || z1!=z2 || z1!=z3 || z1!=z4 || z2!=z3 || z2!=z4 || z3!=z4 ||getchar()!='\n') return error();
         if(z1<'A' || (z1>'Z' && z1<'a') || z1>'z') return error();
 
-        if (fabs(b * b - 2 * b * e + e * e - 4 * (a - d) * (c - f)) <= 100 * 4 * (a - d) * (c - f) * DBL_EPSILON)
+        if (fabs(b * b - 2 * b * e + e * e - 4 * (a - d) * (c - f)) <= 100 *  2 * b * e*4 * (a - d) * (c - f) * DBL_EPSILON)
             printf("%c=%.f.\n", z1, (e - b) / 2 * (a - d));
-        else if (b * b - 2 * b * e + e * e - 4 * (a - d) * (c - f) > 100 * 4 * (a - d) * (c - f) * DBL_EPSILON)
+        else if (b * b - 2 * b * e + e * e - 4 * (a - d) * (c - f) > 100 *  2 * b * e * 4 * (a - d) * (c - f) * DBL_EPSILON)
             rovnice(e - b, 2 * (a - d), b * b - 2 * b * e + e * e - 4 * (a - d) * (c - f),z1);
         else printf("Neexistuje reseni v R. Zadejte jinou hodnotu\n");
         printf("\n");
