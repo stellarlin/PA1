@@ -18,7 +18,7 @@ int main(void)
         n=m;
         m=tmp;
         printf ("n = %d, m = %d\n", n, m);
-        return 0;
     }
+    return 0;
 }
 
