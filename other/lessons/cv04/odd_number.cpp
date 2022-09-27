@@ -10,7 +10,7 @@ int main(void)
     int n;
     while(!feof(stdin)) {
         printf("Zadejte cislo:\n");
-        if (scanf(" %d", &n) != 1)return error();
+        if (scanf(" %d", &n) != 1 || getchar()!='\n')return error();
         if (n % 2 == 0) printf("Cislo je sude");
         else printf("Cislo je liche");
 
