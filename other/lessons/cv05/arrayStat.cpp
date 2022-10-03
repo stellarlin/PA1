@@ -83,7 +83,7 @@ int N_numbers( int k, int method)
 
 int until_zero(int k, int method)
 {
-    int n=0, num, sum=0, last = 0, min, max, sec_max, err, type=0, ar_diff=0, ge_diff=0;
+    int n=0, num, sum=0, last = 0, min, max, sec_max, err, type=0, arge_type = 0 ar_diff=0, ge_diff=0;
     printf("Start to print your numbers:\n");
     while((err=scanf(" %d", &num)) == 1 && num !=0) {
         required_num(method,k,&num, &last, &n, &min, &max,&sec_max, &sum, &type, &ar_diff, &ge_diff);
