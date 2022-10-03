@@ -29,3 +29,4 @@ add_executable(cvik4_datum other/lessons/cv04/datum.cpp)
 
 add_executable(cvik5_arrayStat other/lessons/cv05/arrayStat.cpp)
 add_executable(cvik5_gcd other/lessons/cv05/gcd.cpp)
+add_executable(cvik5_rectangle other/lessons/cv05/rectangle.cpp)
