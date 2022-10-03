@@ -24,3 +24,6 @@ add_executable(cvik4_triangle other/lessons/cv04/triangle.cpp)
 add_executable(cvik4_KNP other/lessons/cv04/KNP.cpp)
 add_executable(cvik4_rovnice other/lessons/cv04/rovnice.cpp)
 add_executable(cvik4_numbers_to_words other/lessons/cv04/numbers_to_words.cpp)
+add_executable(cvik4_datum other/lessons/cv04/datum.cpp)
+
+add_executable(cvik5_arrayStat other/lessons/cv05/arrayStat.cpp)
