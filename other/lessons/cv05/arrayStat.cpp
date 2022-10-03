@@ -20,7 +20,6 @@ bool method_parameter (int method, int k, int num)
     }
     return false;
 }
-
 void stats (int count, int sum, int min, int max, int sec_max, double expected, int type, int arge_type)
 {
     printf("Count of numbers: %d\n"
@@ -39,7 +38,6 @@ void stats (int count, int sum, int min, int max, int sec_max, double expected, 
         case 2: printf ("growing sequence.\n");
                 break;
         case 3: printf ("declining sequence.\n");
-        printf("\n");
     }
     printf ("Function is ");
     switch (arge_type)
