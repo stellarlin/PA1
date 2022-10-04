@@ -16,6 +16,7 @@ add_executable(cvik3_teplota other/lessons/cv03/teplota.cpp)
 add_executable(cvik3_equation other/lessons/cv03/equation_two.cpp)
 add_executable(cvik3_cool_calk other/lessons/cv03/cool_calk.cpp)
 add_executable(cvik3_rym_num other/lessons/cv03/rym_num.cpp)
+add_executable(cvik3_delka other/lessons/cv03/cv03_delka.cpp)
 
 add_executable(cvik4_odd_number other/lessons/cv04/odd_number.cpp)
 add_executable(cvik4_sort_num other/lessons/cv04/sort_of_numbers.cpp)
