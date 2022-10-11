@@ -38,3 +38,7 @@ add_executable(cvik5_water other/lessons/cv05/water.cpp)
 add_executable(cvik5_triangle_same other/lessons/cv05/triangle_same.cpp)
 add_executable(cvik5_mail other/lessons/cv05/mail.cpp)
 add_executable(cvik5_balik other/lessons/cv05/balik.cpp)
+
+add_executable(cvik6_fibonacci other/lessons/cv06/fibonacci.cpp)
+add_executable(cvik6_tribonacci other/lessons/cv06/tribonacci.cpp)
+add_executable(cvik6_representation other/lessons/cv06/representation.cpp)
