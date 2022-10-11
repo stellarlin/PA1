@@ -28,6 +28,7 @@ add_executable(cvik4_rovnice other/lessons/cv04/rovnice.cpp)
 add_executable(cvik4_numbers_to_words other/lessons/cv04/numbers_to_words.cpp)
 add_executable(cvik4_datum other/lessons/cv04/datum.cpp)
 add_executable(cvik4_prvocisla other/lessons/cv04/prvocisla.cpp)
+add_executable(cvik4_tabulka other/lessons/cv04/cv04_tab.cpp)
 
 add_executable(cvik5_arrayStat other/lessons/cv05/arrayStat.cpp)
 add_executable(cvik5_gcd other/lessons/cv05/gcd.cpp)
