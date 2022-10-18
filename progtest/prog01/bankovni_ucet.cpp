@@ -16,10 +16,10 @@ bool read_procent(double * proc)
 
 void count_procent (double * account, double procent,  int day, int prev)
 {
-    if (prev==day)return;
+    if (prev==day || day ==0)return;
     if (prev == -1) prev = 0;
-    *account +=  floor(*account*procent)/100;
-    if (day ==0) return;
+    if(*account >=0) *account +=  floor(*account*procent)/100;
+    else  *account +=  ceil(*account*procent)/100;
    count_procent(&*account,  procent, --day,  prev);
 }
 int main (void)
@@ -34,7 +34,7 @@ int main (void)
     printf ("Zadejte transakce:\n");
     while (amount!=0) {
         if (scanf(" %d , %lf", &day, &amount) != 2 || getchar() != '\n' || day < 0
-        ||( day <=previous_day && previous_day!=-1)) return error();
+        || day <=previous_day) return error();
 
         if (account >= 0) count_procent(&account, kredit, day, previous_day);
         else count_procent(&account, debit, day, previous_day);
