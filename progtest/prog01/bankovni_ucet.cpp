@@ -18,9 +18,7 @@ void count_procent (double * account, double procent,  int day, int prev)
 {
     if (prev==day)return;
     if (prev == -1) prev = 0;
-
-    double procent_part = floor(*account*procent)/100;
-    *account = *account + procent_part;
+    *account +=  floor(*account*procent)/100;
     if (day ==0) return;
    count_procent(&*account,  procent, --day,  prev);
 }
@@ -37,13 +35,12 @@ int main (void)
     while (amount!=0) {
         if (scanf(" %d , %lf", &day, &amount) != 2 || getchar() != '\n' || day < 0
         ||( day <=previous_day && previous_day!=-1)) return error();
+
         if (account >= 0) count_procent(&account, kredit, day, previous_day);
         else count_procent(&account, debit, day, previous_day);
         previous_day=day;
-        printf ("%.2f\n", account);
         account = account + amount;
-        printf ("%.2f\n", account);
-        if(!amount) break;
     }
+    printf ("Zustatek: %.2f\n", account);
     return 0;
 }
