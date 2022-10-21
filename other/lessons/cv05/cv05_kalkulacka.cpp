@@ -2,10 +2,22 @@
 #include <cstdio>
 #include <cmath>
 #include <cfloat>
+#include <ctype.h>
+
 
 bool isDec (double n)
 {
- return fabs(n- (int)n) <= DBL_EPSILON*abs(int(n));
+  return  fabs(n- floor(n)) <= DBL_EPSILON*100*fabs(floor(n));
+}
+
+bool isWhite (void)
+{
+    char c;
+    while ((c = getchar())!='\n')
+    {
+        if(!isspace(c)) return false;
+    }
+    return true;
 }
 
 int error () {
@@ -13,10 +25,11 @@ int error () {
     return 0;
 }
 
-void print_res (double c)
+void print_res (double a , double b,  double c)
 {
-    if (!isDec(c)) printf("%.1f\n", c);
-    else printf("%d\n", int(c));
+    if (a > 1000000 || b >1000000)printf("%.3g\n", c);
+    else if (isDec(c))printf("%.f\n", c);
+    else printf("%.1f\n", c);
 }
 
 
@@ -26,24 +39,25 @@ int main()
     char c;
     printf("Zadejte vzorec:\n");
     if (scanf(" %lf %c %lf =", &a, &c, &b) != 3
-        || (c == '/' && b == 0) || (c == '%' && b == 0)|| getchar()!='\n')
+        || (c == '/' && b == 0) || (c == '%' && b == 0)|| !isWhite())
         return error();
 
     switch (c) {
         case '+':
-            print_res(a+b);
+            print_res(a, b, a+b);
             break;
         case '-':
-            print_res(a-b);
+            print_res(a, b, a-b);
             break;
         case '*':
-            print_res(a*b);
+            print_res(a, b, a*b);
             break;
         case '/':
-            print_res(floor(a/b));
+            if ((a <0  && b >0)|| (b <0 && a >0)) print_res(a,b, ceil(a/b));
+            else print_res(a,b, floor(a/b));
             break;
         case '%':
-            print_res(fmod(a,b));
+            print_res(a, b, fmod(a,b));
             break;
         default: return error();
     }
