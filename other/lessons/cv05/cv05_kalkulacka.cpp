@@ -27,9 +27,9 @@ int error () {
 
 void print_res (double a , double b,  double c)
 {
-    if (a > 1000000 || b >1000000)printf("%.3g\n", c);
+    if (a > 1000000 || b > 1000000)printf("%.3g\n", c);
     else if (isDec(c))printf("%.f\n", c);
-    else printf("%.1f\n", c);
+    else  printf("%.1f\n", c);
 }
 
 
@@ -53,8 +53,7 @@ int main()
             print_res(a, b, a*b);
             break;
         case '/':
-            if ((a <0  && b >0)|| (b <0 && a >0)) print_res(a,b, ceil(a/b));
-            else print_res(a,b, floor(a/b));
+            print_res(a,b, trunc(a/b));;
             break;
         case '%':
             print_res(a, b, fmod(a,b));
