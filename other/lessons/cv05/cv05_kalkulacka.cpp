@@ -25,11 +25,14 @@ int error () {
     return 0;
 }
 
-void print_res (double a , double b,  double c)
+void print_res (double a , double b,  long double c)
 {
-    if (a > 1000000 || b > 1000000)printf("%.3g\n", c);
-    else if (isDec(c))printf("%.f\n", c);
-    else  printf("%.1f\n", c);
+    if (a > 1000000 || b > 1000000)printf("%.3Lg\n", c);
+    else if (isDec(c))printf("%Lf\n", c);
+    else
+    {
+        printf("%Lf\n", c);
+    }
 }
 
 
@@ -53,7 +56,7 @@ int main()
             print_res(a, b, a*b);
             break;
         case '/':
-            print_res(a,b, trunc(a/b));;
+            print_res(a,b, trunc(a/b));
             break;
         case '%':
             print_res(a, b, fmod(a,b));
