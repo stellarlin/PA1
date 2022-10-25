@@ -1,5 +1,7 @@
 #include<stdio.h>
 #include <cmath>
+
+#define MAX_NUM 2000000
 int error (void) {
     printf("Nespravny vstup.\n");
     return 0;
@@ -22,48 +24,46 @@ int sum(int n)
     }
     return sum;
 }
-
-
-void prime_sum_description (int a, int b)
+void prime_sum_count ( unsigned int a, unsigned int b, unsigned int * array)
 {
     int count = 0;
-    for(int i =a; i<=b; i++)
+    for(unsigned int i =a; i<=b; i++)
     {
-        if(isPrime(sum(i)))
-        {
-            printf("%d\n", i);
-            count ++;
-        }
-    }
-    printf("Celkem: %d\n", count);
-}
-void prime_sum_count (int a, int b)
-{
-    int count = 0;
-    for(int i =a; i<=b; i++)
-    {
-        if(isPrime(sum(i))) count++;
+        if(array[i] == 1) count ++;
     }
     printf("Celkem: %d\n", count);
 }
 
-int main(void)
+
+void prime_sum_description (unsigned int a, unsigned int b, char c, unsigned int * array)
 {
-    int a, b;
-    char c;
+    for(unsigned int i =a; i<=b; i++)
+    {
+      if (array[i]==1) continue;
+      if(isPrime(sum(i)))
+      {
+        array[i] = 1;
+        if ( c == '?') printf("%d\n", i);
+    }
+    }
+    prime_sum_count(a, b, array);
+}
+
+int main(void) {
+    unsigned int a = 0, b = 0;
+    char c = 0;
+   unsigned  int array_prime[MAX_NUM + 1] ;
+
+    //   for(int i=0; i<=MAX_NUM; i++) array_prime[i]=0;
+
     printf("Intervaly:\n");
-    while (!feof(stdin)) {
-        if (scanf(" %c %d %d", &c, &a, &b) != 3
+    while (1) {
+        if (scanf(" %c %u %u", &c, &a, &b) != 3
             || b < a || b <= 0 || a <= 0
             || (c != '?' && c != '#')
-            || getchar() != '\n')
-            return error();
-       switch (c)
-       {
-           case '?': prime_sum_description(a, b);
-           break;
-           case '#': prime_sum_count(a, b);
-       }
+            || getchar() != '\n')break;
+        prime_sum_description(a, b, c, array_prime);
     }
-    return 0;
+    if (!feof(stdin)|| c==0 || a ==0 || b ==0) return error();
+        return 0;
 }
