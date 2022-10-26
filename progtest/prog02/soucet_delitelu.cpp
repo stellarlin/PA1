@@ -1,7 +1,7 @@
 #include<stdio.h>
 #include <cmath>
 
-#define MAX_NUM 2000000
+#define MAX_NUM 5000000
 int error (void) {
     printf("Nespravny vstup.\n");
     return 0;
