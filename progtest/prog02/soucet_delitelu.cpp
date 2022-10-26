@@ -24,10 +24,10 @@ int sum(int n)
     }
     return sum;
 }
-void prime_sum_count ( unsigned int a, unsigned int b, unsigned int * array)
+void prime_sum_count (  int a,  int b, int * array)
 {
     int count = 0;
-    for(unsigned int i =a; i<=b; i++)
+    for( int i =a; i<=b; i++)
     {
         if(array[i] == 1) count ++;
     }
@@ -35,9 +35,9 @@ void prime_sum_count ( unsigned int a, unsigned int b, unsigned int * array)
 }
 
 
-void prime_sum_description (unsigned int a, unsigned int b, char c, unsigned int * array)
+void prime_sum_description (int a, int b, char c,  int * array)
 {
-    for(unsigned int i =a; i<=b; i++)
+    for(int i =a; i<=b; i++)
     {
       if (array[i]==1) continue;
       if(isPrime(sum(i)))
@@ -50,18 +50,17 @@ void prime_sum_description (unsigned int a, unsigned int b, char c, unsigned int
 }
 
 int main(void) {
-    unsigned int a = 0, b = 0;
+     int a = 0, b = 0;
     char c = 0;
-   unsigned  int array_prime[MAX_NUM + 1] ;
+   int array_prime[MAX_NUM + 1] ;
 
     //   for(int i=0; i<=MAX_NUM; i++) array_prime[i]=0;
 
     printf("Intervaly:\n");
     while (1) {
-        if (scanf(" %c %u %u", &c, &a, &b) != 3
+        if (scanf(" %c %d %d", &c, &a, &b) != 3
             || b < a || b <= 0 || a <= 0
-            || (c != '?' && c != '#')
-            || getchar() != '\n')break;
+            || (c != '?' && c != '#'))break;
         prime_sum_description(a, b, c, array_prime);
     }
     if (!feof(stdin)|| c==0 || a ==0 || b ==0) return error();
