@@ -1,7 +1,5 @@
 #include<stdio.h>
 #include <cmath>
-
-#define MAX_NUM 5000000
 int error (void) {
     printf("Nespravny vstup.\n");
     return 0;
@@ -24,35 +22,25 @@ int sum(int n)
     }
     return sum;
 }
-void prime_sum_count (  int a,  int b, int * array)
-{
-    int count = 0;
-    for( int i =a; i<=b; i++)
-    {
-        if(array[i] == 1) count ++;
-    }
-    printf("Celkem: %d\n", count);
-}
 
 
-void prime_sum_description (int a, int b, char c,  int * array)
+void prime_sum_description (int a, int b, char c)
 {
+    int count= 0;
     for(int i =a; i<=b; i++)
     {
-      if (array[i]==1) continue;
       if(isPrime(sum(i)))
       {
-        array[i] = 1;
+        count++;
         if ( c == '?') printf("%d\n", i);
     }
     }
-    prime_sum_count(a, b, array);
+    printf("Celkem: %d\n", count);
 }
 
 int main(void) {
      int a = 0, b = 0;
     char c = 0;
-   int array_prime[MAX_NUM + 1] ;
 
     //   for(int i=0; i<=MAX_NUM; i++) array_prime[i]=0;
 
@@ -61,7 +49,7 @@ int main(void) {
         if (scanf(" %c %d %d", &c, &a, &b) != 3
             || b < a || b <= 0 || a <= 0
             || (c != '?' && c != '#'))break;
-        prime_sum_description(a, b, c, array_prime);
+        prime_sum_description(a, b, c);
     }
     if (!feof(stdin)|| c==0 || a ==0 || b ==0) return error();
         return 0;
