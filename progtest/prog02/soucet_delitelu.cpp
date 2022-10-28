@@ -1,7 +1,9 @@
 #include<stdio.h>
 #include <cmath>
+#include <climits>
 
-#define MAX_NUM 5000000
+#define MAX_SUM 1300000
+
 int error (void) {
     printf("Nespravny vstup.\n");
     return 0;
@@ -15,54 +17,73 @@ bool isPrime(int n)
     }
     return true;
 }
-int sum(int n)
+int sum_divider(int n)
 {
     int sum=1;
-    for(int i=1; i<=n/2; i++)
+    for(int i=1; i<=(int)sqrt(n); i++)
     {
-        if(n%i == 0 && i!=1) sum+=i;
+        if(n%i == 0 && i!=1)
+        {
+            if( i== n/i) sum+=i;
+            else sum += i + n/i;
+        }
     }
     return sum;
 }
-void prime_sum_count (  int a,  int b, int * array)
+
+
+void change_set( int * set, int b, int ind)
+{
+    int p = ind, pmax=MAX_SUM-1;
+    set[p] = 0;
+    for (int j = b; j < MAX_SUM; j++)
+    {
+        if(isPrime(sum_divider(j)))
+        {
+            pmax = j;
+            break;
+        }
+    }
+    unsigned int limit = p*p;
+    if (limit>=INT_MAX) return;
+    for(int i = p*p; i<pmax; i+=p) set[i] = 0;
+}
+void prime_sum_interval (int a, int b, char c, int * set)
 {
     int count = 0;
-    for( int i =a; i<=b; i++)
-    {
-        if(array[i] == 1) count ++;
-    }
-    printf("Celkem: %d\n", count);
-}
-
-
-void prime_sum_description (int a, int b, char c,  int * array)
-{
+    int sum;
     for(int i =a; i<=b; i++)
     {
-      if (array[i]==1) continue;
-      if(isPrime(sum(i)))
+        sum = sum_divider(i);
+        if (sum >=MAX_SUM) continue;
+        if (set[sum]==0) continue;
+        if(isPrime(sum))
       {
-        array[i] = 1;
-        if ( c == '?') printf("%d\n", i);
+          count++;
+          if(c == '?') printf("%d\n", i);
+      }
+      else change_set(set, b, sum);
     }
-    }
-    prime_sum_count(a, b, array);
+    printf("Celkem: %d\n", count);
+
 }
 
-int main(void) {
-     int a = 0, b = 0;
-    char c = 0;
-   int array_prime[MAX_NUM + 1] ;
 
-    //   for(int i=0; i<=MAX_NUM; i++) array_prime[i]=0;
+int main(void) {
+    int a = 0, b = 0; //horni a dolni mez
+    char c = 0;// znak # nebo ?
+
+    int set[MAX_SUM]; // pole set[i] = 0 nebo  1,  rozhodnuti jestli soucet delitelu cisla i je prvocislem
+    for(int i=0; i<MAX_SUM; i++) set[i]=1; // vsichni cisla muzou byt prvocilem
+    set[1] = 0; //1 neni prvocislo
 
     printf("Intervaly:\n");
     while (1) {
         if (scanf(" %c %d %d", &c, &a, &b) != 3
             || b < a || b <= 0 || a <= 0
             || (c != '?' && c != '#'))break;
-        prime_sum_description(a, b, c, array_prime);
+        prime_sum_interval(a, b, c, set);
     }
-    if (!feof(stdin)|| c==0 || a ==0 || b ==0) return error();
+ if (!feof(stdin)|| c==0 || a ==0 || b ==0) return error();
         return 0;
 }
