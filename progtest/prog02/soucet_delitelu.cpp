@@ -32,10 +32,9 @@ int sum_divider(int n)
 }
 
 
-void change_set( int * set, int b, int ind)
+void change_set( char * set, int b, int ind)
 {
     int p = ind, pmax=MAX_SUM-1;
-    set[p] = 0;
     for (int j = b; j < MAX_SUM; j++)
     {
         if(isPrime(sum_divider(j)))
@@ -44,11 +43,12 @@ void change_set( int * set, int b, int ind)
             break;
         }
     }
-    unsigned int limit = p*p;
-    if (limit>=INT_MAX) return;
-    for(int i = p*p; i<pmax; i+=p) set[i] = 0;
+
+    if (p>=INT_MAX/p) return;
+
+    for(int i = p*p; i<pmax; i+=p) set[i] = '0';
 }
-void prime_sum_interval (int a, int b, char c, int * set)
+void prime_sum_interval (int a, int b, char c, char * set)
 {
     int count = 0;
     int sum;
@@ -56,7 +56,7 @@ void prime_sum_interval (int a, int b, char c, int * set)
     {
         sum = sum_divider(i);
         if (sum >=MAX_SUM) continue;
-        if (set[sum]==0) continue;
+        if (set[sum]=='0') continue;
         if(isPrime(sum))
       {
           count++;
@@ -68,14 +68,18 @@ void prime_sum_interval (int a, int b, char c, int * set)
 
 }
 
+void initial_set (char * set)
+{
+    for(int i=0; i<MAX_SUM; i++) set[i]='1'; // vsichni cisla muzou byt prvocilem
+    set[1] = '0'; //1 neni prvocislo
+}
 
 int main(void) {
-    int a = 0, b = 0; //horni a dolni mez
-    char c = 0;// znak # nebo ?
+    int a = 0, b = 0;
+    char c = 0;
 
-    int set[MAX_SUM]; // pole set[i] = 0 nebo  1,  rozhodnuti jestli soucet delitelu cisla i je prvocislem
-    for(int i=0; i<MAX_SUM; i++) set[i]=1; // vsichni cisla muzou byt prvocilem
-    set[1] = 0; //1 neni prvocislo
+    char set[MAX_SUM];
+    initial_set(set);
 
     printf("Intervaly:\n");
     while (1) {
