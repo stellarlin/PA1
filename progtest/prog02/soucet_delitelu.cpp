@@ -32,17 +32,10 @@ int sum_divider(int n)
 }
 
 
-void change_set( char * set, int b, int ind)
+void change_set( char * set, int pmax, int ind)
 {
-    int p = ind, pmax=MAX_SUM-1;
-    for (int j = b; j < MAX_SUM; j++)
-    {
-        if(isPrime(sum_divider(j)))
-        {
-            pmax = j;
-            break;
-        }
-    }
+    int p = ind;
+    set[p] = '0';
 
     if (p>=INT_MAX/p) return;
 
@@ -52,6 +45,15 @@ void prime_sum_interval (int a, int b, char c, char * set)
 {
     int count = 0;
     int sum;
+    int max=MAX_SUM-1;
+    for (int j = b; j < MAX_SUM; j++)
+    {
+        if(isPrime(sum_divider(j)))
+        {
+            max = j;
+            break;
+        }
+    }
     for(int i =a; i<=b; i++)
     {
         sum = sum_divider(i);
@@ -62,7 +64,7 @@ void prime_sum_interval (int a, int b, char c, char * set)
             count++;
             if(c == '?') printf("%d\n", i);
         }
-        else change_set(set, b, sum);
+        else change_set(set, max, sum);
     }
     printf("Celkem: %d\n", count);
 
@@ -70,15 +72,15 @@ void prime_sum_interval (int a, int b, char c, char * set)
 
 void initial_set (char * set)
 {
-    for(int i=0; i<MAX_SUM; i++) set[i]='1'; // vsichni cisla muzou byt prvocilem
+    for(int i=0; i<MAX_SUM; i++) set[i]='1'; // vsichni soucty muzou byt prvocilem
     set[1] = '0'; //1 neni prvocislo
 }
 
 int main(void) {
-    int a = 0, b = 0;
-    char c = 0;
+    int a = 0, b = 0; // hranice intervalu
+    char c = 0; // ? nebo #
 
-    char set[MAX_SUM];
+    char set[MAX_SUM]; // pole 0 a 1 kde 0 = neni prvocislo 1 = prvocislo, index prvku je cislem
     initial_set(set);
 
     printf("Intervaly:\n");
