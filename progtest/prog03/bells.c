@@ -2,12 +2,61 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <string.h>
+#include <math.h>
+
 #endif /* __PROGTEST__ */
+
+int error (void) {
+    printf("Nespravny vstup.\n");
+    return 0;
+}
+
+struct TIME
+{
+    int y;
+    int m;
+    int d;
+    int h;
+    int mi;
+};
+
+void different( struct TIME a, struct TIME b, struct TIME *c)
+{
+    struct TIME carry = {0,0,0,0, 0};
+    if(a.mi > b.mi)
+    {
+        carry.=1;
+        b.m+=60;
+    }
+    c->m = b.m  - a.m;
+    if(c->m <0)
+    {
+        carry.m+=1;
+        c->m+=60;
+    }
+    c -> h = b.h - a.h - carry.m;
+
+}
+
+void time_declaration (int y, int m, int d, int h, int i, struct TIME * time)
+{
+    time->y=y;
+    time->m=m;
+    time->d=d;
+    time->h=h;
+    time->mi=i;
+}
+
 
 int bells ( int y1, int m1, int d1, int h1, int i1,
             int y2, int m2, int d2, int h2, int i2,
             long long int * b1, long long int * b2 )
 {
+    struct TIME t1; struct TIME t2; struct TIME diff;
+    time_declaration(y1,m1,d1,h1,i1, &t1);
+    time_declaration(y2,m2,d2,h2,i2, &t2);
+
   /* todo */
 }
 
