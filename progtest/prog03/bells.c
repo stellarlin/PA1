@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <string.h>
 #include <math.h>
+#include <stdbool.h>
 
 #endif /* __PROGTEST__ */
 
@@ -12,13 +13,108 @@ int error (void) {
     return 0;
 }
 
-int check_input (int y, int m, int d, int h, int i)
+struct Date
+{   int y;
+    int m;
+    int d;
+    int h;
+    int mi;
+};
+
+bool isLeap (int year)
 {
-    return(y >=1600 
-           && m >0 && m <13
-           && isValidDay(d,m,y)
-           && h >=0 && h<24
-           && i>=0 && i<60);
+    if((year % 4 == 0 && year % 100 != 0) || (year % 4 == 0 && year % 400 == 0)) return true;
+    return false;
+}
+
+bool isValidDay(struct Date user)
+{
+    switch(user.m)
+    {
+        case 1:
+        case 3:
+        case 5:
+        case 7:
+        case 8:
+        case 10:
+        case 12: if (user.d<1 || user.d>31) return false;
+            break;
+        case 4:
+        case 6:
+        case 9:
+        case 11: if (user.d<1 || user.d>30) return false;
+            break;
+        case 2: if (user.d<1 || (!isLeap(user.y) && user.d>28)
+                    || (isLeap(user.y) && user.d>29) ) return false;
+            break;
+    }
+    return true;
+}
+
+int offset (struct Date user)
+{
+    if(!isLeap(user.y))
+    {
+        switch (user.m)
+        {
+            case 1:
+            case 10: return 0;
+            case 2:
+            case 3:
+            case 11: return 3;
+            case 4:
+            case 7:  return 6;
+            case 5:  return 1;
+            case 6:  return 4;
+            case 8:  return 2;
+            case 9:
+            case 12: return 5;
+        }
+    }
+    else
+    {
+        switch (user.m)
+        {
+            case 1:
+            case 4:
+            case 7: return 0;
+            case 2:
+            case 8: return 3;
+            case 3:
+            case 11: return 4;
+            case 5: return 2;
+            case 6: return 5;
+            case 9:
+            case 12: return 6;
+            case 10: return 1;
+        }
+    }
+    return 0;
+}
+
+int determination (struct Date user)
+{
+
+    int num = (5*((user.year -1)%4) + 4*((user.year-1)%100) + 6*((user.year -1) %400))%7;
+    return  (num+offset(user)+user.day)%7;
+}
+
+int check_input (struct Date date)
+{
+    return(date.y >=1600
+           && date.m >0 && date.m <13
+           && isValidDay(date)
+           && date.h >=0 && date.h<24
+           && date.mi>=0 && date.mi<60);
+}
+
+void time_declaration (int y, int m, int d, int h, int i, struct Date * date)
+{
+    date->y=y;
+    date->m=m;
+    date->d=d;
+    date->h=h;
+    date->mi=i;
 }
 
 
@@ -26,7 +122,10 @@ int bells ( int y1, int m1, int d1, int h1, int i1,
             int y2, int m2, int d2, int h2, int i2,
             long long int * b1, long long int * b2 )
 {
-   if (!check_input(y1,m1,d1,h1,i1) || !check_input(y2,m2,d2,h2,i2) ) return error();
+    struct Date t1; struct Date t2; struct Date diff;
+    time_declaration(y1,m1,d1,h1,i1, &t1);
+    time_declaration(y2,m2,d2,h2,i2, &t2);
+   if (!check_input(t1) || !check_input(t2) ) return error();
   /* todo */
 }
 
