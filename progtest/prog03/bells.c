@@ -2,8 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include <string.h>
-#include <math.h>
 #include <stdbool.h>
 
 #endif /* __PROGTEST__ */
@@ -13,23 +11,15 @@ int error (void) {
     return 0;
 }
 
-struct Date
-{   int y;
-    int m;
-    int d;
-    int h;
-    int mi;
-};
-
 bool isLeap (int year)
 {
-    if((year % 4 == 0 && year % 100 != 0) || (year % 4 == 0 && year % 400 == 0)) return true;
+    if((year % 4 == 0 && year % 100 != 0 && year % 4000!=0) || (year % 4 == 0 && year % 400 == 0 && year % 4000 !=0)) return true;
     return false;
 }
 
-bool isValidDay(struct Date user)
+bool isValidDay(int y, int m, int d, int h, int i)
 {
-    switch(user.m)
+    switch(m)
     {
         case 1:
         case 3:
@@ -37,20 +27,21 @@ bool isValidDay(struct Date user)
         case 7:
         case 8:
         case 10:
-        case 12: if (user.d<1 || user.d>31) return false;
+        case 12: if (d<1 || d>31) return false;
             break;
         case 4:
         case 6:
         case 9:
-        case 11: if (user.d<1 || user.d>30) return false;
+        case 11: if (d<1 || d>30) return false;
             break;
-        case 2: if (user.d<1 || (!isLeap(user.y) && user.d>28)
-                    || (isLeap(user.y) && user.d>29) ) return false;
+        case 2: if (d<1 || (!isLeap(y) && d>28)
+                    || (isLeap(y) && d>29) ) return false;
             break;
     }
     return true;
 }
 
+/*
 int offset (struct Date user)
 {
     if(!isLeap(user.y))
@@ -91,41 +82,42 @@ int offset (struct Date user)
     }
     return 0;
 }
-
 int determination (struct Date user)
 {
 
-    int num = (5*((user.year -1)%4) + 4*((user.year-1)%100) + 6*((user.year -1) %400))%7;
-    return  (num+offset(user)+user.day)%7;
+    int num = (5*((user.y -1)%4) + 4*((user.y-1)%100) + 6*((user.y-1) %400))%7;
+    return  (num+offset(user)+user.d)%7;
 }
-
-int check_input (struct Date date)
+*/
+int check_input (int y, int m, int d, int h, int i)
 {
-    return(date.y >=1600
-           && date.m >0 && date.m <13
-           && isValidDay(date)
-           && date.h >=0 && date.h<24
-           && date.mi>=0 && date.mi<60);
+    return(y >=1600 &&
+           m >0 && m <13
+           && isValidDay(y,m,d,h,i)
+           && h >=0 && h<24
+           && i>=0 && i<60);
 }
-
-void time_declaration (int y, int m, int d, int h, int i, struct Date * date)
+long long int time_difference(long long int date1, long long int date2 )
 {
-    date->y=y;
-    date->m=m;
-    date->d=d;
-    date->h=h;
-    date->mi=i;
+ return (date2-date1 <0) ? -1 : date2-date1;
 }
-
+long long int date_to_secund(int y, int m, int d, int h, int i)
+{
+    return i + 60*h + 1440*d + 43800*m+525960*y;
+}
 
 int bells ( int y1, int m1, int d1, int h1, int i1,
             int y2, int m2, int d2, int h2, int i2,
             long long int * b1, long long int * b2 )
 {
-    struct Date t1; struct Date t2; struct Date diff;
-    time_declaration(y1,m1,d1,h1,i1, &t1);
-    time_declaration(y2,m2,d2,h2,i2, &t2);
-   if (!check_input(t1) || !check_input(t2) ) return error();
+
+   if (!check_input(y1,m1,d1,h1,i1) || !check_input(y2,m2,d2,h2,i2)) return error();
+   long long int difference = time_difference(date_to_secund(y1,m1,d1,h1,i1), date_to_secund(y2,m2,d2,h2,i2));
+   if(difference==-1) return error();
+
+   
+
+   return 1;
   /* todo */
 }
 
@@ -138,7 +130,7 @@ int main ( int argc, char * argv [] )
                    2022, 10,  1, 18, 45, &b1, &b2 ) == 1
            && b1 == 56
            && b2 == 20 );
-  assert ( bells ( 2022, 10,  3, 13, 15,
+ /* assert ( bells ( 2022, 10,  3, 13, 15,
                    2022, 10,  4, 11, 20, &b1, &b2 ) == 1
            && b1 == 221
            && b2 == 143 );
@@ -202,6 +194,7 @@ int main ( int argc, char * argv [] )
                    2004,  2, 29, 12,  0, &b1, &b2 ) == 1
            && b1 == 0
            && b2 == 0 );
+           */
   return EXIT_SUCCESS;
 }
 #endif /* __PROGTEST__ */
