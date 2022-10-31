@@ -1,6 +1,8 @@
 
 #include<cstdio>
 #include <cmath>
+#include <cstring>
+
 #define MAX_SIZE 50
 #define MAX_CHAR 2500
 int error (void) {
@@ -11,30 +13,43 @@ int error (void) {
 
 int matrix_declaration (int array[][MAX_SIZE], int size)
 {
+
     for(int i = 0; i<size; i++)
     {
         for(int j=0; j<size; j++)
         {
             if(scanf(" %d", &array[j][i])!=1) return 0;
         }
-        if(getchar()!='\n') return 0;
+      if(getchar()!='\n')return 0;
+
     }
     return 1;
 }
+
+/*void print_matrix  (int array[][MAX_SIZE], int size) {
+    for (int i = 0; i < size; i++) {
+        for (int j = 0; j < size; j++) {
+            printf(" %d", array[j][i]);
+        }
+        printf ("\n");
+    }
+}
+ */
 
 void int_to_char(int num,char * s, int * i )
 {
     if(num<10)
     {
         s[*i]=num+'0';
+        ++*i;
         return;
     }
     while (num!=0)
     {
-        int j=10;
+        int j=num;
         while(j>=10)
         {
-            j = num/10;
+            j = j/10;
         }
         s[*i]='0'+j;
         num=num/10;
@@ -45,30 +60,22 @@ void read_matrix (int array[][MAX_SIZE], int size, char * s)
 {
     int index = 0;
     int i, j;
-    for ( i =0; i<size; i++)
+    if(size==1)
     {
-        for (j = 0; j <size-i; j++)
-        {
-            int_to_char(array[j][i], s, &index);
-        }
-        for(j=i+1; j<size-i; j++)
-        {
-            int_to_char(array[j][size-i], s, &index);
-            s[index]=;
-            index++;
-        }
-        for (j=size-i; j>i; j--)
-        {
-            s[index]=array[size-i][j];
-            index++;
-        }
-        for (j=size-i; j>i; j--)
-        {
-            s[index]=array[j][i];
-            index++;
-        }
+        int_to_char(array[0][0], s, &index);
+        s[index]='\0';
+        return;
     }
+    for ( i =0; i<size-1; i++)
+    {
+        for (j = 0; j <size-i; j++) int_to_char(array[j][i], s, &index);
+        for(j=i+1; j<size-i; j++) int_to_char(array[size-i-1][j], s, &index);
+        for (j=size-i-2; j>i; j--)  int_to_char(array[j][size-i-1], s, &index);
+        for (j=size-i-1; j>i+1; j--)  int_to_char(array[i][j], s, &index);
+    }
+    s[index]='\0';
 }
+
 
 int main (void)
 {
@@ -82,6 +89,8 @@ int main (void)
     printf ("Zadejte matici:\n");
     if (!matrix_declaration(array, size)) return error();
     read_matrix(array, size, s);
-
+  //  print_matrix(array, size);
+    printf(" %s ", s);
+    printf("\n");
     return 0;
 }
