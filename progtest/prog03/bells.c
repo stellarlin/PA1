@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <stdbool.h>
-
 #endif /* __PROGTEST__ */
 
 bool isLeap (int year)
@@ -179,6 +178,12 @@ diff=diff%1440;
     for (int i =0; i<diff/60;i++)
     {
         h2++;
+        if(h2==24)
+        {
+            det++;
+            det=det%7;
+            h2=0;
+        }
         if(det!=0)
         {
             *bell1+=10;
@@ -186,34 +191,22 @@ diff=diff%1440;
             else *bell2+=h2%12;
         }
 
-        if(h2==24)
-        {
-            det++;
-            det=det%7;
-            h2=0;
-        }
+
     }
 
     diff=diff%60;
+    if(det==0) diff=llabs(diff-60);
     for (int j =0; j<=diff;j+=15)
     {
-        if(det!=0) {
-            if (i2 % 15 != 0)i2 += 15;
-            if (i2 / 15 == 0) *bell1 += 4;
-            else *bell1 += i2 / 15;
-        }
+        if(det==0)j=i2;
+        if (i2 % 15 != 0)i2 += 15;
+        if (i2 / 15 == 0) *bell1 += 4;
+        else *bell1 += i2 / 15;
+
         i2+=15;
-        if(i2>=60)
-        {
-            i2-=60;
-            h2++;
-            if(h2==24)
-            {
-                det++;
-                det=det%7;
-                h2=0;
-            }
-        }
+        if(i2>=60) i2-=60;
+
+
     }
 
 
@@ -237,7 +230,7 @@ int main ( int argc, char * argv [] )
 {
   long long int b1, b2;
 
-  assert ( bells ( 2022, 10,  1, 13, 15,
+/*assert ( bells ( 2022, 10,  1, 13, 15,
                    2022, 10,  1, 18, 45, &b1, &b2 ) == 1
            && b1 == 56
            && b2 == 20 );
@@ -249,7 +242,7 @@ int main ( int argc, char * argv [] )
                       2022, 10,  2, 11, 20, &b1, &b2 ) == 1
               && b1 == 106
               && b2 == 65 );
-  /*   assert ( bells ( 2022, 10,  2, 13, 15,
+ */ assert ( bells ( 2022, 10,  2, 13, 15,
                       2022, 10,  3, 11, 20, &b1, &b2 ) == 1
               && b1 == 115
               && b2 == 78 );
@@ -257,7 +250,7 @@ int main ( int argc, char * argv [] )
                       2022, 10,  3, 11, 20, &b1, &b2 ) == 1
               && b1 == 221
               && b2 == 143 );
-     assert ( bells ( 2022,  1,  1, 13, 15,
+  /*   assert ( bells ( 2022,  1,  1, 13, 15,
                       2022, 10,  5, 11, 20, &b1, &b2 ) == 1
               && b1 == 56861
               && b2 == 36959 );
@@ -305,7 +298,7 @@ int main ( int argc, char * argv [] )
                       2004,  2, 29, 12,  0, &b1, &b2 ) == 1
               && b1 == 0
               && b2 == 0 );
- */
+*/
   return EXIT_SUCCESS;
 }
 #endif /* __PROGTEST__ */
