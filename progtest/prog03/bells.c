@@ -98,8 +98,8 @@ void how_many_days (long long int * bell1, long long int * bell2, long long int 
     {
         if(*week_day!=0)
         {
-            *bell2+=312;
-            *bell1+=1440;
+            *bell2+=156;
+            *bell1+=240;
         }
         *week_day= push_week_day(week_day);
     }
