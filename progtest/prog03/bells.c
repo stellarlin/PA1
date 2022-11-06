@@ -55,51 +55,11 @@ int check_input (struct DATE date)
            && date.i>=0 && date.i<60);
 }
 
-int offset (int y, int m)
-{
-    if(!isLeap(y))
-    {
-        switch (m)
-        {
-            case 1:
-            case 10: return 0;
-            case 2:
-            case 3:
-            case 11: return 3;
-            case 4:
-            case 7:  return 6;
-            case 5:  return 1;
-            case 6:  return 4;
-            case 8:  return 2;
-            case 9:
-            case 12: return 5;
-        }
-    }
-    else
-    {
-        switch (m)
-        {
-            case 1:
-            case 4:
-            case 7: return 0;
-            case 2:
-            case 8: return 3;
-            case 3:
-            case 11: return 4;
-            case 5: return 2;
-            case 6: return 5;
-            case 9:
-            case 12: return 6;
-            case 10: return 1;
-        }
-    }
-    return 0;
-}
 int day_of_week (struct DATE date)
 {
-
-    int num = (5*((date.y -1)%4) + 4*((date.y-1)%100) + 6*((date.y-1) %400))%7;
-    return  (num+offset(date.y, date.m) + date.d)%7;
+    static int t[] = { 0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4 };
+    date.y -= date.m < 3;
+    return (date.y + date.y / 4 - date.y / 100 + date.y / 400  - date.y/4000 + t[date.m - 1] + date.d)% 7;
 }
 
 long long int time_difference(long long int date1, long long int date2 )
@@ -112,19 +72,10 @@ long long int date_to_minute(struct DATE date)
 }
 void diff_day_convert (long long diff, struct DATE * date1, struct DATE  date2) {
 
-    date1->d=date1->h=0;
+    date1->d=0;
     date1->m = date2.m;
     date1->y = date2.y;
-    if (date2.i >= (diff % 1440) % 60) date1->i = date2.i - (diff % 1440) % 60;
-    else {
-        date1->i = date2.i - diff % 1440 % 60 + 60;
-        date1->h--;
-    }
-    if (date1->h + date2.h >= (diff % 1440) / 60) date1->h += date2.h - (diff % 1440) / 60;
-    else {
-        date1->h += date2.h - diff % 1440 / 60 + 24;
-        date1->d--;
-    }
+    if (date2.h < (diff % 1440) / 60) date1->d--;
     if (date1->d + date2.d >= diff / 1440)   date1->d += date2.d - diff / 1440;
     else {
         if (date1->m == 1) {
@@ -136,7 +87,7 @@ void diff_day_convert (long long diff, struct DATE * date1, struct DATE  date2) 
 
 int push_week_day(int * day)
 {
-    ++*day;
+    ++(*day);
     *day %=7;
     return *day;
 }
@@ -160,37 +111,50 @@ void how_many_hours (long long int * bell1, long long int * bell2, long long int
     {
         if(date1->h==24)
         {
-            date1->h=1;
-            *bell2 +=12;
-           push_week_day(week_day);
-        }
-        if(*week_day!=0) {
-            if (i == 0 && date1->i != 0) {}
-            else if (date1->h % 12 != 0) *bell2 += 12;
-            else *bell2 += date1->h % 12;
-            if (i != diff) *bell1 += 10;
+            if(!*week_day) {
+                for (int j = 0; j < date1->i; j += 15) {
+                    if (i / 15 == 0) *bell1 += 4;
+                    else *bell1 += i / 15;
+                }
             }
-        date1->h++;
+           date1->h=0;
+           push_week_day(week_day);
+           if(!*week_day) *bell1-=10;
+
+        }
+
+        if(*week_day!=0) {
+            if (i == 0 && date1->i != 0) date1->h++, *bell1 += 10, i++;
+            if (date1->h % 12 == 0) *bell2 += 12;
+            else *bell2 += date1->h % 12;
+            if (i != diff)  *bell1 += 10;
+            }
+
+        if (i != diff)  date1->h++;
         }
  }
 
 void how_many_minutes (long long int * bell1,  long long int diff,  int * week_day, struct DATE * date1)
 {
-    if(week_day==0) diff=llabs(diff-60);
-    for (int i =0; i<=diff;i+=15)
+    if(date1->h==24)
     {
-        if(week_day==0)
-        {
-            i=date1->i;
-            diff=llabs(diff-60);
-        }
-
+        date1->h=0;
+        push_week_day(week_day);
+    }
+    int i =0;
+    if(*week_day==0)
+    {
+        i=date1->i;
+        diff=llabs(diff-60);
+    }
+    for (; i<=diff;i+=15)
+    {
       //  if (date1->i % 15 != 0)i2 += 15;
-        if (date1->i/ 15 == 0) *bell1 += 4;
+        if (date1->i/15 == 0) *bell1 += 4;
         else *bell1 += date1->i / 15;
 
         date1->i+=15;
-        if(date1->i>=60) date1->i-=60;
+        if(date1->i>=60) date1->i-=60, date1->h++;
     }
 
 }
@@ -202,7 +166,7 @@ void count_bells(long long int * bell1, long long int * bell2, long long int dif
     diff = diff % 10080;
 
     diff_day_convert(diff, &date1, date2);
-    int week_day =day_of_week(date1)%7;
+    int week_day =day_of_week(date1);
 
     how_many_days(bell1, bell2, diff, &week_day);
 
@@ -217,7 +181,7 @@ int bells ( int y1, int m1, int d1, int h1, int i1,
             int y2, int m2, int d2, int h2, int i2,
             long long int * b1, long long int * b2 )
 {
-
+*b1=4; *b2=12;
     struct DATE date1={y1,m1,d1,h1,i1};
     struct DATE date2={y2,m2,d2,h2,i2};
    if (!check_input(date1) || !check_input(date2)) return 0;
@@ -231,8 +195,8 @@ int bells ( int y1, int m1, int d1, int h1, int i1,
 int main ( int argc, char * argv [] )
 {
   long long int b1, b2;
-/*
-assert ( bells ( 2022, 10,  1, 13, 15,
+
+/*assert ( bells ( 2022, 10,  1, 13, 15,
                    2022, 10,  1, 18, 45, &b1, &b2 ) == 1
            && b1 == 56
            && b2 == 20 );
@@ -241,14 +205,29 @@ assert ( bells ( 2022, 10,  3, 13, 15,
                    2022, 10,  4, 11, 20, &b1, &b2 ) == 1
            && b1 == 221
            && b2 == 143 );
-*/  assert ( bells ( 2022, 10,  1, 13, 15,
+    assert ( bells ( 2022, 11,  1, 12,  0,
+                     2022, 10,  1, 12,  0, &b1, &b2 ) == 0
+             && b1 == 4
+             && b2 == 12 );
+    assert ( bells ( 2022, 10, 32, 12,  0,
+                     2022, 11, 10, 12,  0, &b1, &b2 ) == 0
+             && b1 == 4
+             && b2 == 12 );
+    assert ( bells ( 2100,  2, 29, 12,  0,
+                     2100,  2, 29, 12,  0, &b1, &b2 ) == 0
+             && b1 == 4
+             && b2 == 12 );
+
+ assert ( bells ( 2022, 10,  1, 13, 15,
                       2022, 10,  2, 11, 20, &b1, &b2 ) == 1
               && b1 == 106
               && b2 == 65 );
+
  assert ( bells ( 2022, 10,  2, 13, 15,
                       2022, 10,  3, 11, 20, &b1, &b2 ) == 1
               && b1 == 115
               && b2 == 78 );
+                */
      assert ( bells ( 2022, 10,  1, 13, 15,
                       2022, 10,  3, 11, 20, &b1, &b2 ) == 1
               && b1 == 221
@@ -281,18 +260,7 @@ assert ( bells ( 2022, 10,  3, 13, 15,
                       2022, 10,  1, 12,  0, &b1, &b2 ) == 1
               && b1 == 4
               && b2 == 12 );
-     assert ( bells ( 2022, 11,  1, 12,  0,
-                      2022, 10,  1, 12,  0, &b1, &b2 ) == 0
-              && b1 == 4
-              && b2 == 12 );
-     assert ( bells ( 2022, 10, 32, 12,  0,
-                      2022, 11, 10, 12,  0, &b1, &b2 ) == 0
-              && b1 == 4
-              && b2 == 12 );
-     assert ( bells ( 2100,  2, 29, 12,  0,
-                      2100,  2, 29, 12,  0, &b1, &b2 ) == 0
-              && b1 == 4
-              && b2 == 12 );
+
      assert ( bells ( 2000,  2, 29, 12,  0,
                       2000,  2, 29, 12,  0, &b1, &b2 ) == 1
               && b1 == 4
