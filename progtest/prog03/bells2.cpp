@@ -5,11 +5,12 @@
 
 #endif /* __PROGTEST__ */
 
+#define minute_one_week 10080
 #define minute_one_day 1440
 #define minute_one_hour 60
 
-#define hour_bells_week 1092
-#define minute_bells_week 1680
+#define hour_bells_week 936 // week without sunday
+#define minute_bells_week 1440 // week without sunday
 #define minute_bells_day 240
 #define hour_bells_day 156
 #define minute_bells_hour 10
@@ -79,7 +80,6 @@ long long int month_in_minute(struct DATE date)
     for(int i=1; i<date.m; i++) res += minute_one_day* month_days(i, date.y);
     return res;
 }
-
 long long int date_to_minute(struct DATE date)
 {
     return date.i + minute_one_hour*date.h + minute_one_day*date.d + month_in_minute(date) + year_in_minute(date.y);
@@ -91,8 +91,45 @@ long long int time_difference(long long int date1, long long int  date2 )
     return date2-date1;
 }
 
+void diff_day_convert (long long diff, struct DATE * date1, struct DATE  date2) {
 
+    date1->d=0;
+    date1->m = date2.m;
+    date1->y = date2.y;
+    if (date2.h < (diff % minute_one_day) / minute_one_hour) date1->d--;
+    if (date1->d + date2.d >= diff /minute_one_day )   date1->d += date2.d - diff / minute_one_day;
+    else {
+        if (date1->m == 1) {
+            date1->m = 12;
+            date1->y++;
+        } else date1->m--;
+    }
+}
+int day_of_week (struct DATE date)
+{
+    static int t[] = { 0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4 };
+    date.y -= date.m < 3;
+    return (date.y + date.y / 4 - date.y / 100 + date.y / 400  - date.y/4000 + t[date.m - 1] + date.d)% 7;
+}
 
+void count_bells(long long int * bell1, long long int * bell2, long long int diff,  struct DATE date1, struct DATE date2)
+{
+    *bell2 =diff/minute_one_week * hour_bells_week ;
+    *bell1 =diff/minute_one_week * minute_bells_week;
+
+    diff = diff % minute_one_week;
+
+    diff_day_convert(diff, &date1, date2);
+    int week_day =day_of_week(date1);
+
+    how_many_days(bell1, bell2, diff, &date1, &week_day);
+
+    diff=diff%DAYS;
+    how_many_hours(bell1, bell2, diff, &week_day, &date1);
+
+    diff=diff%60;
+    how_many_minutes(bell1, diff, &week_day, &date1);
+}
 
 
 int  bells ( int y1, int m1, int d1, int h1, int i1,
@@ -104,9 +141,8 @@ int  bells ( int y1, int m1, int d1, int h1, int i1,
     if (!check_input(date1) || !check_input(date2)) return 0;
     long long int difference = time_difference(date_to_minute(date1), date_to_minute(date2) );
     if(difference<0) return 0;
-printf("diff: %lld\n",difference);
-
-return 1;
+    count_bells(b1, b2, difference, date1, date2);
+    return 1;
 }
 
 
