@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #endif /* __PROGTEST__ */
 
+#define DAYS 1400
+
 struct DATE
 {
     int y;
@@ -44,7 +46,7 @@ int month_days(int m, int y)
 }
 bool isValidDay(struct DATE date)
 {
-    return  (date.d>=1 && date.d< month_days(date.m, date.y));
+    return  (date.d>=1 && date.d<=month_days(date.m, date.y));
 }
 int check_input (struct DATE date)
 {
@@ -61,22 +63,33 @@ int day_of_week (struct DATE date)
     date.y -= date.m < 3;
     return (date.y + date.y / 4 - date.y / 100 + date.y / 400  - date.y/4000 + t[date.m - 1] + date.d)% 7;
 }
+long long int years_in_minute(int year1, int year2)
+{
+    long long res = 0;
+    for(int i=year1; i<=year2; i++) res += DAYS*(365 + isLeap(i));
+    return res;
+}
+long long int month_in_minute(struct DATE date1, struct DATE date2)
+{
+    long long res = 0;
+    for(int i = 1; i<date2.m; i++) res+=DAYS*month_days(i,date2.y);
+    for(int i = 1; i<date1.m; i++) res-=DAYS*month_days(i,date1.y);
+    return res;
+}
+long long int time_difference(struct DATE date1, struct DATE date2 )
+{
+    long long int diff = (date2.i-date1.i) + 60*(date2.h-date1.h) + DAYS *(date2.d-date1.d) + month_in_minute(date1, date2) +  years_in_minute(date1.y, date2.y);
 
-long long int time_difference(long long int date1, long long int date2 )
-{
- return (date2-date1 <0) ? -1 : date2-date1;
+ return (diff <0) ? -1 : diff;
 }
-long long int date_to_minute(struct DATE date)
-{
-    return date.i + 60*date.h + 1440*date.d + 43800*date.m + 525960*date.y;
-}
+
 void diff_day_convert (long long diff, struct DATE * date1, struct DATE  date2) {
 
     date1->d=0;
     date1->m = date2.m;
     date1->y = date2.y;
-    if (date2.h < (diff % 1440) / 60) date1->d--;
-    if (date1->d + date2.d >= diff / 1440)   date1->d += date2.d - diff / 1440;
+    if (date2.h < (diff % DAYS) / 60) date1->d--;
+    if (date1->d + date2.d >= diff / DAYS)   date1->d += date2.d - diff / DAYS;
     else {
         if (date1->m == 1) {
             date1->m = 12;
@@ -92,11 +105,25 @@ int push_week_day(int * day)
     return *day;
 }
 
-void how_many_days (long long int * bell1, long long int * bell2, long long int diff,  int * week_day)
+void hours_counter (long long int * bell1, long long int * bell2,  long long int diff, int  h, int i )
 {
-    for (int i =diff/1440; i>0;i--)
+    if (h % 12 == 0) *bell2 += 12;
+    else *bell2 += h % 12;
+    if (i != diff)  *bell1 += 10;
+}
+void how_many_days (long long int * bell1, long long int * bell2, long long int diff,  struct DATE * date1, int * week_day)
+{
+    for (int i =diff/DAYS; i>0;i--)
     {
-        if(*week_day!=0)
+        if((*week_day+1)%7 ==0) {
+
+            for (int j = date1->h; j < 24; j++)
+            {
+                if ( j == date1->h && date1->i != 0) j++, *bell1 += 10;
+                hours_counter(bell1, bell2, 23, j, j);
+            }
+        }
+        else if(*week_day!=0)
         {
             *bell2+=156;
             *bell1+=240;
@@ -104,7 +131,7 @@ void how_many_days (long long int * bell1, long long int * bell2, long long int 
         *week_day= push_week_day(week_day);
     }
 }
-void how_many_hours (long long int * bell1, long long int * bell2, long long int diff,  int * week_day, struct DATE * date1,struct DATE date2 )
+void how_many_hours (long long int * bell1, long long int * bell2, long long int diff,  int * week_day, struct DATE * date1)
 {
     diff = diff/60;
     for (int i =0; i<=diff; i++)
@@ -125,9 +152,7 @@ void how_many_hours (long long int * bell1, long long int * bell2, long long int
 
         if(*week_day!=0) {
             if (i == 0 && date1->i != 0) date1->h++, *bell1 += 10, i++;
-            if (date1->h % 12 == 0) *bell2 += 12;
-            else *bell2 += date1->h % 12;
-            if (i != diff)  *bell1 += 10;
+            hours_counter(bell1, bell2, diff,  date1->h, i);
             }
 
         if (i != diff)  date1->h++;
@@ -161,17 +186,17 @@ void how_many_minutes (long long int * bell1,  long long int diff,  int * week_d
 void count_bells(long long int * bell1, long long int * bell2, long long int diff,  struct DATE date1, struct DATE date2)
 {
     *bell2 =diff/10080 * 1872;
-    *bell1 =diff/10080 * 1440;
+    *bell1 =diff/10080 * ;
 
     diff = diff % 10080;
 
     diff_day_convert(diff, &date1, date2);
     int week_day =day_of_week(date1);
 
-    how_many_days(bell1, bell2, diff, &week_day);
+    how_many_days(bell1, bell2, diff, &date1, &week_day);
 
-    diff=diff%1440;
-    how_many_hours(bell1, bell2, diff, &week_day, &date1, date2);
+    diff=diff%DAYS;
+    how_many_hours(bell1, bell2, diff, &week_day, &date1);
 
     diff=diff%60;
     how_many_minutes(bell1, diff, &week_day, &date1);
@@ -185,7 +210,7 @@ int bells ( int y1, int m1, int d1, int h1, int i1,
     struct DATE date1={y1,m1,d1,h1,i1};
     struct DATE date2={y2,m2,d2,h2,i2};
    if (!check_input(date1) || !check_input(date2)) return 0;
-   long long int difference = time_difference(date_to_minute(date1), date_to_minute(date2));
+   long long int difference = time_difference(date1, date2);
    if(difference<0) return 0;
    count_bells(b1, b2, difference, date1, date2);
    return 1;
@@ -227,7 +252,7 @@ assert ( bells ( 2022, 10,  3, 13, 15,
                       2022, 10,  3, 11, 20, &b1, &b2 ) == 1
               && b1 == 115
               && b2 == 78 );
-                */
+ */
      assert ( bells ( 2022, 10,  1, 13, 15,
                       2022, 10,  3, 11, 20, &b1, &b2 ) == 1
               && b1 == 221

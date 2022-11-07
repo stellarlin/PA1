@@ -1,7 +1,6 @@
 #ifndef __PROGTEST__
 #include <cstdlib>
 #include <cassert>
-#include <cstdio>
 
 #endif /* __PROGTEST__ */
 
@@ -112,6 +111,95 @@ int day_of_week (struct DATE date)
     return (date.y + date.y / 4 - date.y / 100 + date.y / 400  - date.y/4000 + t[date.m - 1] + date.d)% 7;
 }
 
+int push_week_day(int * day)
+{
+    ++(*day);
+    *day %=7;
+    return *day;
+}
+void hours_counter (long long int * bell1, long long int * bell2,  long long int diff, int  h, int i )
+{
+    if (h % 12 == 0) *bell2 += 12;
+    else *bell2 += h % 12;
+    if (i != diff)  *bell1 += minute_bells_hour;
+}
+void how_many_days (long long int * bell1, long long int * bell2, long long int diff,  struct DATE  * date1, int * week_day)
+{
+    for (int i =0; i<diff/minute_one_day; i++)
+    {
+        if((*week_day+1)%7 ==0) { // if next day is sunday
+
+            // count all hours until 0:00
+            i--;
+            for (int j = date1->h; j < 24; j++)
+            {
+                if ( j == date1->h && date1->i != 0) j++, *bell1 += 10;
+                hours_counter(bell1, bell2, 23, j, j);
+            }
+        }
+        else if(*week_day!=0)
+        {
+            //count bells per one full day
+            *bell2+=hour_bells_day;
+            *bell1+=minute_bells_day;
+        }
+        *week_day= push_week_day(week_day);
+    }
+}
+void how_many_hours (long long int * bell1, long long int * bell2, long long int diff, struct DATE * date1,  int * week_day)
+{
+    diff = diff/minute_one_hour;
+    for (int i =0; i<=diff; i++)
+    {
+        if(date1->h==24)
+        {
+            //if this day is sunday, we'll start in 0:00 of monday and need count hours until date1.h
+            if(!*week_day) {
+                for (int j = 0; j <= date1->i; j += 15) {
+                    if (j / 15 == 0) *bell1 += 4;
+                    else *bell1 += j / 15;
+                }
+            }
+            date1->h=0;
+            push_week_day(week_day);
+            if(!*week_day) *bell1-=minute_bells_hour;
+
+        }
+
+        if(*week_day!=0) {
+            if (i == 0 && date1->i != 0) date1->h++, *bell1 += 10, i++;
+            hours_counter(bell1, bell2, diff,  date1->h, i);
+        }
+
+        if (i != diff)  date1->h++;
+    }
+
+}
+void how_many_minutes (long long int * bell1,  long long int diff,  int * week_day, struct DATE * date1)
+{
+    if(date1->h==24)
+    {
+        date1->h=0;
+        push_week_day(week_day);
+    }
+    int i =0;
+    if(*week_day==0)
+    {
+        i=date1->i;
+        diff=llabs(diff-minute_one_hour);
+    }
+    for (; i<=diff;i+=15)
+    {
+        //  if (date1->i % 15 != 0)i2 += 15;
+        if (date1->i/15 == 0) *bell1 += 4;
+        else *bell1 += date1->i / 15;
+
+        date1->i+=15;
+        if(date1->i>=60) date1->i-=minute_one_hour, date1->h++;
+    }
+
+}
+
 void count_bells(long long int * bell1, long long int * bell2, long long int diff,  struct DATE date1, struct DATE date2)
 {
     *bell2 =diff/minute_one_week * hour_bells_week ;
@@ -124,8 +212,8 @@ void count_bells(long long int * bell1, long long int * bell2, long long int dif
 
     how_many_days(bell1, bell2, diff, &date1, &week_day);
 
-    diff=diff%DAYS;
-    how_many_hours(bell1, bell2, diff, &week_day, &date1);
+    diff=diff%minute_one_day;
+    how_many_hours(bell1, bell2, diff, &date1, &week_day);
 
     diff=diff%60;
     how_many_minutes(bell1, diff, &week_day, &date1);
@@ -156,12 +244,8 @@ int main ( int argc, char * argv [] )
     long long int b1, b2;
     b1=4; b2=12;
 
-    bells ( 2023, 10,  1, 13, 15,
-            2024, 10,  1, 13, 15, &b1, &b2 );
-
-
-
-/*assert ( bells ( 2022, 10,  1, 13, 15,
+/*
+assert ( bells ( 2022, 10,  1, 13, 15,
                    2022, 10,  1, 18, 45, &b1, &b2 ) == 1
            && b1 == 56
            && b2 == 20 );
@@ -176,12 +260,12 @@ int main ( int argc, char * argv [] )
 assert ( bells ( 2022, 10,  2, 13, 15,
                      2022, 10,  3, 11, 20, &b1, &b2 ) == 1
              && b1 == 115
-             && b2 == 78 );
+             && b2 == 78 ); */
     assert ( bells ( 2022, 10,  1, 13, 15,
                      2022, 10,  3, 11, 20, &b1, &b2 ) == 1
              && b1 == 221
              && b2 == 143 );
-   assert ( bells ( 2022,  1,  1, 13, 15,
+       assert ( bells ( 2022,  1,  1, 13, 15,
                         2022, 10,  5, 11, 20, &b1, &b2 ) == 1
                 && b1 == 56861
                 && b2 == 36959 );
@@ -229,7 +313,6 @@ assert ( bells ( 2022, 10,  2, 13, 15,
                         2004,  2, 29, 12,  0, &b1, &b2 ) == 1
                 && b1 == 0
                 && b2 == 0 );
-  */
     return EXIT_SUCCESS;
 }
 #endif /* __PROGTEST__ */
