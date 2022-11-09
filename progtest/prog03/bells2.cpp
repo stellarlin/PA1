@@ -117,15 +117,15 @@ int push_week_day(int * day)
     *day %=7;
     return *day;
 }
-void hours_counter (long long int * bell1, long long int * bell2,  long long int diff, int  h, int i )
+void hours_counter (long long int * bell1, long long int * bell2,  int last_h, int  h, int i )
 {
     if (h % 12 == 0) *bell2 += 12;
     else *bell2 += h % 12;
-    if (i != diff)  *bell1 += minute_bells_hour;
+    if (i != last_h)  *bell1 += minute_bells_hour;
 }
-void how_many_days (long long int * bell1, long long int * bell2, long long int diff,  struct DATE  * date1, int * week_day)
+void how_many_days (long long int * bell1, long long int * bell2,  struct DATE  * date1, struct DATE   date2, int * week_day)
 {
-    for (int i =0; i<diff/minute_one_day; i++)
+ /*   for (int i =0; i<diff/minute_one_day; i++)
     {
         if((*week_day+1)%7 ==0) { // if next day is sunday
 
@@ -145,6 +145,33 @@ void how_many_days (long long int * bell1, long long int * bell2, long long int 
         }
         *week_day= push_week_day(week_day);
     }
+    */
+
+ if(date1->d==date2.d)return;
+ if(*week_day!=0) {
+     for (int i = date1->h; i < 24; i++) {
+         if (i == date1->h && date1->i != 0) i++, *bell1 += 10;
+         hours_counter(bell1, bell2, 23, i, i);
+     }
+     for (int i = date1->i; i < 60; i += 15) {
+         if (i / 15 == 0) *bell1 += 4;
+         else *bell1 += i / 15;
+     }
+ }
+     date1->h=date1->i=0;
+     date1->d++;
+
+ while(date1->d!=date2.d)
+ {
+     if(*week_day!=0)
+     {
+         //count bells per one full day
+         *bell2+=hour_bells_day;
+         *bell1+=minute_bells_day;
+     }
+     *week_day= push_week_day(week_day);
+ }
+
 }
 void how_many_hours (long long int * bell1, long long int * bell2, long long int diff, struct DATE * date1,  int * week_day)
 {
@@ -210,7 +237,7 @@ void count_bells(long long int * bell1, long long int * bell2, long long int dif
     diff_day_convert(diff, &date1, date2);
     int week_day =day_of_week(date1);
 
-    how_many_days(bell1, bell2, diff, &date1, &week_day);
+    how_many_days(bell1, bell2,  &date1, &week_day);
 
     diff=diff%minute_one_day;
     how_many_hours(bell1, bell2, diff, &date1, &week_day);
