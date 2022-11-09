@@ -175,7 +175,7 @@ void how_many_days (long long int * bell1, long long int * bell2,  struct DATE  
 }
 void how_many_hours (long long int * bell1, long long int * bell2, long long int diff, struct DATE * date1,  int * week_day)
 {
-    diff = diff/minute_one_hour;
+  /*  diff = diff/minute_one_hour;
     for (int i =0; i<=diff; i++)
     {
         if(date1->h==24)
@@ -200,10 +200,11 @@ void how_many_hours (long long int * bell1, long long int * bell2, long long int
 
         if (i != diff)  date1->h++;
     }
-
+*/
 }
 void how_many_minutes (long long int * bell1,  long long int diff,  int * week_day, struct DATE * date1)
 {
+    /*
     if(date1->h==24)
     {
         date1->h=0;
@@ -224,7 +225,7 @@ void how_many_minutes (long long int * bell1,  long long int diff,  int * week_d
         date1->i+=15;
         if(date1->i>=60) date1->i-=minute_one_hour, date1->h++;
     }
-
+*/
 }
 
 void count_bells(long long int * bell1, long long int * bell2, long long int diff,  struct DATE date1, struct DATE date2)
