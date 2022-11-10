@@ -23,12 +23,13 @@ struct DATE
     int i;
 };
 
-
+// check if year is leap or not
 bool isLeap (int year)
 {
     if((year % 4 == 0 && year % 100 != 0 && year % 4000!=0) || (year % 4 == 0 && year % 400 == 0 && year % 4000 !=0)) return true;
     return false;
 }
+//return number of da
 int month_days(int m, int y)
 {
     switch(m) {
@@ -129,38 +130,44 @@ int push_week_day(int * day)
     return *day;
 }
 
-void how_many_days (long long int * bell1, long long int * bell2,  struct DATE  * date1, struct DATE   date2, int * week_day, bool * first_hour_flag)
-{
+void how_many_days (long long int * bell1, long long int * bell2,  struct DATE  * date1, struct DATE   date2, int * week_day, bool * first_hour_flag) {
 
- if(date1->d==date2.d)return;
- if(*week_day!=0) {
-     for (int i = date1->h; i < 24; i++) {
-         if (i == date1->h && date1->i != 0 && !*first_hour_flag) *first_hour_flag=1, i++, *bell1+=minute_bells_hour;
-         *bell2 += hours_counter( i);
-         if (i != 23)  *bell1 += minute_bells_hour;
-     }
-     for (int i = date1->i; i < 60; i += 15) {
-         *bell1 += minute_counter(i);
-     }
+    if (date1->d == date2.d)return;
+    if (*week_day != 0) {
 
- }
-     date1->h=date1->i=0;
-     date1->d++;
-    *week_day= push_week_day(week_day);
+        if (date1->i != 0 && !*first_hour_flag) {
+            if (date1->i % 15 != 0) date1->i += 15;
+            *first_hour_flag = 1;
+            date1->h++;
+            *bell1 += minute_bells_hour;
+        }
 
- while(date1->d!=date2.d)
- {
-     if(*week_day!=0)
-     {
-         //count bells per one full day
-         *bell2+=hour_bells_day;
-         *bell1+=minute_bells_day;
-     }
-     date1->d++;
-     *week_day= push_week_day(week_day);
- }
+        while (date1->i < 60) {
+            *bell1 += minute_counter(date1->i);
+            date1->i += 15;
+        }
 
+        while (date1->h < 24) {
+            *bell2 += hours_counter(date1->h);
+            if (date1->h < 23) *bell1 += minute_bells_hour;
+            date1->h++;
+        }
+    }
+    date1->h = date1->i = 0;
+    date1->d++;
+    *week_day = push_week_day(week_day);
+
+    while (date1->d != date2.d) {
+        if (*week_day != 0) {
+            //count bells per one full day
+            *bell2 += hour_bells_day;
+            *bell1 += minute_bells_day;
+        }
+        date1->d++;
+        *week_day = push_week_day(week_day);
+    }
 }
+
 void how_many_hours (long long int * bell1, long long int * bell2, struct DATE * date1,  struct DATE  date2, int * week_day, bool * first_hour_flag)
 {
   if((date1->h == date2.h && date1->i!=0) || !*week_day) return;
@@ -172,6 +179,7 @@ void how_many_hours (long long int * bell1, long long int * bell2, struct DATE *
   }
 
   if( date1->i != 0 ) {
+      if (!*first_hour_flag && date1->i % 15 != 0) date1->i += 15;
       if (*first_hour_flag) hours_counter(date1->h);
       else *first_hour_flag = 1;
       while(date1->i< 60)
@@ -189,9 +197,10 @@ void how_many_hours (long long int * bell1, long long int * bell2, struct DATE *
     }
     }
 
-void how_many_minutes (long long int * bell1, int * week_day, struct DATE * date1,  struct DATE  date2)
+void how_many_minutes (long long int * bell1, int * week_day, struct DATE * date1,  struct DATE  date2,  bool * first_hour_flag)
 {
     if(!*week_day) return;
+    if (!*first_hour_flag && date1->i % 15 != 0) date1->i += 15;
     while (date1->i <= date2.i) {
         *bell1 += minute_counter(date1->i);
         date1->i+=15;
@@ -213,7 +222,7 @@ void count_bells(long long int * bell1, long long int * bell2, long long int dif
 
     how_many_days(bell1, bell2,  &date1, date2,  &week_day, &first_hour_flag);
     how_many_hours(bell1, bell2,&date1, date2, &week_day, &first_hour_flag);
-    how_many_minutes(bell1, &week_day, &date1, date2);
+    how_many_minutes(bell1, &week_day, &date1, date2, &first_hour_flag);
 }
 
 
@@ -239,21 +248,34 @@ int  bells ( int y1, int m1, int d1, int h1, int i1,
 int main ( int argc, char * argv [] )
 {
     long long int b1, b2;
-    b1=4; b2=12;
+    b1=2; b2=0;
 
 
-assert ( bells ( 2022, 10,  1, 13, 15,
-                   2022, 10,  1, 18, 45, &b1, &b2 ) == 1
-           && b1 == 56
-           && b2 == 20 );
- assert ( bells ( 2022, 10,  3, 13, 15,
-                   2022, 10,  4, 11, 20, &b1, &b2 ) == 1
-           && b1 == 221
-           && b2 == 143 );
-  assert ( bells ( 2022, 10,  1, 13, 15,
-                      2022, 10,  2, 11, 20, &b1, &b2 ) == 1
-              && b1 == 106
-              && b2 == 65 );
+//assert ( bells ( 2022, 10,  1, 13, 15,
+//                  2022, 10,  1, 18, 45, &b1, &b2 ) == 1
+//          && b1 == 56
+//           && b2 == 20 );
+// assert ( bells ( 2022, 10,  3, 13, 15,
+//                   2022, 10,  4, 11, 20, &b1, &b2 ) == 1
+//           && b1 == 221
+//           && b2 == 143 );
+//  assert ( bells ( 2022, 10,  1, 13, 15,
+//                      2022, 10,  2, 11, 20, &b1, &b2 ) == 1
+//              && b1 == 106
+//              && b2 == 65 );
+//   assert ( bells ( 2022, 10,  1, 11, 16,
+//                    2022, 10,  1, 11, 20, &b1, &b2 ) == 1
+//            && b1 == 0
+//            && b2 == 0 );
+//   assert ( bells ( 2022, 10,  1, 11, 16,
+//                    2022, 10,  1, 12, 20, &b1, &b2 ) == 1
+//            && b1 == 10
+//            && b2 == 12 );
+    assert ( bells ( 2022, 10,  1, 13, 16,
+                     2022, 10,  3, 11, 20, &b1, &b2 ) == 1
+             && b1 == 220
+             && b2 == 143 );
+
  assert ( bells ( 2022, 10,  2, 13, 15,
                      2022, 10,  3, 11, 20, &b1, &b2 ) == 1
              && b1 == 115
@@ -288,28 +310,56 @@ assert ( bells ( 2022, 10,  1, 13, 15,
                 && b2 == 0 );
             assert ( bells ( 2022, 10,  1, 12,  0,
                         2022, 10,  1, 12,  0, &b1, &b2 ) == 1
-                && b1 == 4
-                && b2 == 12 );
+                && b1 == 2
+                && b2 == 0 );
        assert ( bells ( 2022, 11,  1, 12,  0,
                         2022, 10,  1, 12,  0, &b1, &b2 ) == 0
-                && b1 == 4
-                && b2 == 12 );
+                && b1 == 2
+                && b2 == 0 );
        assert ( bells ( 2022, 10, 32, 12,  0,
                         2022, 11, 10, 12,  0, &b1, &b2 ) == 0
-                && b1 == 4
-                && b2 == 12 );
+                && b1 == 2
+                && b2 == 0 );
        assert ( bells ( 2100,  2, 29, 12,  0,
                         2100,  2, 29, 12,  0, &b1, &b2 ) == 0
-                && b1 == 4
-                && b2 == 12 );
+                && b1 == 2
+                && b2 == 0 );
        assert ( bells ( 2000,  2, 29, 12,  0,
                         2000,  2, 29, 12,  0, &b1, &b2 ) == 1
-                && b1 == 4
-                && b2 == 12 );
+                && b1 == 2
+                && b2 == 0 );
        assert ( bells ( 2004,  2, 29, 12,  0,
                         2004,  2, 29, 12,  0, &b1, &b2 ) == 1
                 && b1 == 0
                 && b2 == 0 );
+
+
+    assert (  bells ( 2091, 10, 13, 16, 47, 2093743, 2, 24, 14, 24, &b1, &b2 )==1
+            && b1==157157372615
+            && b2==102152292209);
+
+    assert ( bells ( 1824, 1, 4, 0, 0, 1824, 2, 3, 0, 0, &b1, &b2 )==1
+            && b1==6004
+            && b2==3912);
+
+
+    assert(bells(1666,8,2,17,59,  1666,8,2,19,65,  &b1, &b2) == 0 && b1 == 0 && b2 == 0);
+    assert(bells(1666,12,28,3,43,  1666,12,28,16,47,  &b1, &b2) == 1 && b1 == 133 && b2 == 82);
+    assert(bells(1666,3,1,9,43,  1666,3,1,17,68,  &b1, &b2) == 0 && b1 == 133 && b2 == 82);
+    assert(bells(1666,12,20,9,30,  1666,12,20,17,73,  &b1, &b2) == 0 && b1 == 133 && b2 == 82);
+    assert(bells(1666,6,2,6,29,  1666,6,2,6,36,  &b1, &b2) == 1 && b1 == 2 && b2 == 0);
+    assert(bells(1666,3,10,8,50,  1666,3,10,26,59,  &b1, &b2) == 0 && b1 == 2 && b2 == 0);
+    assert(bells(1666,8,15,12,1,  1666,8,15,25,43,  &b1, &b2) == 0 && b1 == 2 && b2 == 0);
+    assert(bells(1666,6,25,16,32,  1666,6,25,33,39,  &b1, &b2) == 0 && b1 == 2 && b2 == 0);
+    assert(bells(1666,2,6,19,6,  1666,2,6,27,40,  &b1, &b2) == 0 && b1 == 2 && b2 == 0);
+    assert(bells(1666,5,1,8,43,  1666,5,1,27,81,  &b1, &b2) == 0 && b1 == 2 && b2 == 0);
+    assert(bells(1666,10,4,6,52,  1666,10,4,9,95,  &b1, &b2) == 0 && b1 == 2 && b2 == 0);
+    assert(bells(1666,1,17,14,10,  1666,1,17,32,46,  &b1, &b2) == 0 && b1 == 2 && b2 == 0);
+    assert(bells(1666,4,7,13,44,  1666,4,7,30,48,  &b1, &b2) == 0 && b1 == 2 && b2 == 0);
+    assert(bells(1666,2,26,6,57,  1666,2,26,10,73,  &b1, &b2) == 0 && b1 == 2 && b2 == 0);
+    assert(bells(1666,4,14,1,5,  1666,4,14,7,27,  &b1, &b2) == 1 && b1 == 61 && b2 == 27);
+    assert(( bells ( 1700, 9, 9, 0, 0, 1700, 9, 9, 22, 0, &b1, &b2 ) == 1 && b1 == 224 && b2 == 145));
+
     return EXIT_SUCCESS;
 }
 #endif /* __PROGTEST__ */
