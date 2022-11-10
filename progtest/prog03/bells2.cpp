@@ -167,6 +167,7 @@ void how_many_days (long long int * bell1, long long int * bell2,  struct DATE  
  }
      date1->h=date1->i=0;
      date1->d++;
+    *week_day= push_week_day(week_day);
 
  while(date1->d!=date2.d)
  {
@@ -176,6 +177,7 @@ void how_many_days (long long int * bell1, long long int * bell2,  struct DATE  
          *bell2+=hour_bells_day;
          *bell1+=minute_bells_day;
      }
+     date1->d++;
      *week_day= push_week_day(week_day);
  }
 
@@ -190,13 +192,13 @@ void how_many_hours (long long int * bell1, long long int * bell2, struct DATE *
       {
           *bell1 += minute_counter(date1->i);
           date1->i+=15;
-          date1->i%=60;
       }
+      date1->i=0;
       date1->h++;
   }
-    while (date1->h<date2.h) {
+    while (date1->h<=date2.h) {
         *bell2 += hours_counter(date1->h);
-        *bell1 += minute_bells_hour;
+        if(date1->h!=date2.h)*bell1 += minute_bells_hour;
         date1->h++;
     }
     }
@@ -247,7 +249,7 @@ void count_bells(long long int * bell1, long long int * bell2, long long int dif
 
     how_many_days(bell1, bell2,  &date1, date2,  &week_day, &first_hour_flag);
     how_many_hours(bell1, bell2,&date1, date2, &week_day, &first_hour_flag);
-    how_many_minutes(bell1, &week_day, &date1, date1);
+    how_many_minutes(bell1, &week_day, &date1, date2);
 }
 
 
@@ -276,7 +278,7 @@ int main ( int argc, char * argv [] )
     b1=4; b2=12;
 
 
-assert ( bells ( 2022, 10,  1, 13, 15,
+/*assert ( bells ( 2022, 10,  1, 13, 15,
                    2022, 10,  1, 18, 45, &b1, &b2 ) == 1
            && b1 == 56
            && b2 == 20 );
@@ -284,19 +286,19 @@ assert ( bells ( 2022, 10,  1, 13, 15,
                    2022, 10,  4, 11, 20, &b1, &b2 ) == 1
            && b1 == 221
            && b2 == 143 );
-    assert ( bells ( 2022, 10,  1, 13, 15,
+  assert ( bells ( 2022, 10,  1, 13, 15,
                       2022, 10,  2, 11, 20, &b1, &b2 ) == 1
               && b1 == 106
               && b2 == 65 );
-assert ( bells ( 2022, 10,  2, 13, 15,
+ assert ( bells ( 2022, 10,  2, 13, 15,
                      2022, 10,  3, 11, 20, &b1, &b2 ) == 1
              && b1 == 115
              && b2 == 78 );
-    assert ( bells ( 2022, 10,  1, 13, 15,
+  assert ( bells ( 2022, 10,  1, 13, 15,
                      2022, 10,  3, 11, 20, &b1, &b2 ) == 1
              && b1 == 221
              && b2 == 143 );
-       assert ( bells ( 2022,  1,  1, 13, 15,
+    */       assert ( bells ( 2022,  1,  1, 13, 15,
                         2022, 10,  5, 11, 20, &b1, &b2 ) == 1
                 && b1 == 56861
                 && b2 == 36959 );
