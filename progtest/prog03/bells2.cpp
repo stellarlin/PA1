@@ -184,7 +184,14 @@ void how_many_days (long long int * bell1, long long int * bell2,  struct DATE  
 }
 void how_many_hours (long long int * bell1, long long int * bell2, struct DATE * date1,  struct DATE  date2, int * week_day, bool * first_hour_flag)
 {
-  if(date1->h == date2.h || !*week_day) return;
+  if((date1->h == date2.h && date1->i!=0) || !*week_day) return;
+
+  if(date1->h == date2.h && date1->i==0)
+  {
+      *bell2 += hours_counter(date1->h);
+      return;
+  }
+
   if( date1->i != 0 ) {
       if (*first_hour_flag) hours_counter(date1->h);
       else *first_hour_flag = 1;
@@ -278,7 +285,7 @@ int main ( int argc, char * argv [] )
     b1=4; b2=12;
 
 
-/*assert ( bells ( 2022, 10,  1, 13, 15,
+assert ( bells ( 2022, 10,  1, 13, 15,
                    2022, 10,  1, 18, 45, &b1, &b2 ) == 1
            && b1 == 56
            && b2 == 20 );
@@ -298,7 +305,7 @@ int main ( int argc, char * argv [] )
                      2022, 10,  3, 11, 20, &b1, &b2 ) == 1
              && b1 == 221
              && b2 == 143 );
-    */       assert ( bells ( 2022,  1,  1, 13, 15,
+      assert ( bells ( 2022,  1,  1, 13, 15,
                         2022, 10,  5, 11, 20, &b1, &b2 ) == 1
                 && b1 == 56861
                 && b2 == 36959 );
@@ -322,7 +329,7 @@ int main ( int argc, char * argv [] )
                         2022, 10,  1,  0, 25, &b1, &b2 ) == 1
                 && b1 == 1
                 && b2 == 0 );
-       assert ( bells ( 2022, 10,  1, 12,  0,
+            assert ( bells ( 2022, 10,  1, 12,  0,
                         2022, 10,  1, 12,  0, &b1, &b2 ) == 1
                 && b1 == 4
                 && b2 == 12 );
