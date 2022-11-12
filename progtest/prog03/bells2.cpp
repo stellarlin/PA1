@@ -197,22 +197,15 @@ void how_many_hours (long long int * bell1, long long int * bell2, struct DATE *
     }
     }
 
-void how_many_minutes (long long int * bell1, int * week_day, struct DATE * date1,  struct DATE  date2,  bool * first_hour_flag)
-{
-    if(!*week_day ) return;
-    while (date1->i < date2.i+15) {
-        if (!*first_hour_flag && date1->i % 15 != 0) *first_hour_flag=1,  date1->i+=15;
-        if(date1->i>=date2.i)
-        {
-            if(date2.i%15 == 0) *bell1 += minute_counter(date1->i);
-            return;
-        }
-        *bell1 += minute_counter(date1->i);
-        date1->i+=15;
-    }
-   // if(date1->i >= date2.i && date2.i%15==0)  *bell1 += minute_counter(date2.i);
-
-
+void how_many_minutes (long long int * bell1, int * week_day, struct DATE * date1,  struct DATE  date2,  bool * first_hour_flag) {
+    if (!*week_day) return;
+    while (date1->i <= date2.i) {
+        if (!*first_hour_flag && date1->i % 15 != 0) *first_hour_flag = 1, date1->i += 15;
+        if (date1->i> date2.i)break;
+    *bell1 += minute_counter(date1->i);
+    date1->i += 15;
+}
+    if(date1->i<date2.i+15 && date2.i/15==date1->i/15) *bell1+= minute_counter(date2.i);
 }
 
 void count_bells(long long int * bell1, long long int * bell2, long long int diff,  struct DATE date1, struct DATE date2)
@@ -368,9 +361,9 @@ assert ( bells ( 2022, 10,  1,  23, 46,
 
 
   assert(bells(1666,12,28,3,43,  1666,12,28,16,47,  &b1, &b2) == 1 && b1 == 133 && b2 == 82);
-     assert(bells(1666,6,2,6,29,  1666,6,2,6,36,  &b1, &b2) == 1 && b1 == 2 && b2 == 0);
     assert(bells(1666,4,14,1,5,  1666,4,14,7,27,  &b1, &b2) == 1 && b1 == 61 && b2 == 27);
     assert(( bells ( 1700, 9, 9, 0, 0, 1700, 9, 9, 22, 0, &b1, &b2 ) == 1 && b1 == 224 && b2 == 145));
+  assert(bells(1666,6,2,6,29,  1666,6,2,6,36,  &b1, &b2) == 1 && b1 == 2 && b2 == 0);
 
     return EXIT_SUCCESS;
 }
