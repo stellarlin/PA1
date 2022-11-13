@@ -56,27 +56,27 @@ return 1;
 }
 
 bool vertical_symmetry(int array[][MAX_SIZE], int * column, int * row) {
-    return false;
+    return 1;
 }
 
-bool center_symmetry(int array[][MAX_SIZE], int * column, int * row, bool ver_sym, bool hor_sym) {
-    return false;
+bool center_symmetry(int array[][MAX_SIZE], int * column, int * row) {
+    return 1;
 }
 
 int main (void)
 {
     int column_size, row_size;
     int array[MAX_SIZE][MAX_SIZE];
-    bool ver_sym, hor_sym;
     printf ("Matice:\n");
     if (!matrix_declaration(array, &column_size, &row_size)) return error();
+
     printf ("Symetrie podle horizontalni osy: ");
-    hor_sym=horizontal_symmetry(array, &column_size, &row_size);
-    yes_or_not(hor_sym);
+    yes_or_not(horizontal_symmetry(array, &column_size, &row_size));
+
     printf ("Symetrie podle vertikalni osy: ");
-    ver_sym=vertical_symmetry(array, &column_size, &row_size);
-    yes_or_not(ver_sym);
+    yes_or_not(  vertical_symmetry(array, &column_size, &row_size));
+
     printf ("Symetrie podle stredu: ");
-    yes_or_not( center_symmetry(array, &column_size, &row_size, hor_sym, ver_sym));
+    yes_or_not( center_symmetry(array, &column_size, &row_size));
     return 0;
 }
