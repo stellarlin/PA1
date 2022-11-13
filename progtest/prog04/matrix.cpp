@@ -7,6 +7,10 @@ bool error (void) {
     return 0;
 }
 
+void yes_or_not (bool result)
+{
+   result == 1  ? printf ("ano\n") : printf("ne\n");
+}
 
 int matrix_declaration (int array[][MAX_SIZE], int * column, int * row)
 {
@@ -46,33 +50,33 @@ int matrix_declaration (int array[][MAX_SIZE], int * column, int * row)
     return 1;
 }
 
-/*
-void int_to_char(int num,char * s, int * i )
-{
-    if(num<10)
-    {
-        s[*i]=num+'0';
-        ++*i;
-        return;
-    }
-    while (num!=0)
-    {
-        int j=num;
-        while(j>=10)
-        {
-            j = j/10;
-        }
-        s[*i]='0'+j;
-        num=num/10;
-        ++*i;
-    }
+bool horizontal_symmetry(int array[][MAX_SIZE], int * column, int * row) {
+
+return 1;
 }
-*/
+
+bool vertical_symmetry(int array[][MAX_SIZE], int * column, int * row) {
+    return false;
+}
+
+bool center_symmetry(int array[][MAX_SIZE], int * column, int * row, bool ver_sym, bool hor_sym) {
+    return false;
+}
+
 int main (void)
 {
     int column_size, row_size;
     int array[MAX_SIZE][MAX_SIZE];
+    bool ver_sym, hor_sym;
     printf ("Matice:\n");
     if (!matrix_declaration(array, &column_size, &row_size)) return error();
+    printf ("Symetrie podle horizontalni osy: ");
+    hor_sym=horizontal_symmetry(array, &column_size, &row_size);
+    yes_or_not(hor_sym);
+    printf ("Symetrie podle vertikalni osy: ");
+    ver_sym=vertical_symmetry(array, &column_size, &row_size);
+    yes_or_not(ver_sym);
+    printf ("Symetrie podle stredu: ");
+    yes_or_not( center_symmetry(array, &column_size, &row_size, hor_sym, ver_sym));
     return 0;
 }
