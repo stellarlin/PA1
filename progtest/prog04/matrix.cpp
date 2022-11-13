@@ -52,14 +52,37 @@ int matrix_declaration (int array[][MAX_SIZE], int * column, int * row)
 
 bool horizontal_symmetry(int array[][MAX_SIZE], int * column, int * row) {
 
+    int start;
+    if(*row==1) return 1;
+    else start = *row/2 -1;
+    for(int i = start; i>=0; i--)
+    {
+        for(int j = 0; j<*column; j++)
+        {
+            if (array[i][j]!=array[*row-1-i][j]) return 0;
+        }
+    }
 return 1;
 }
 
 bool vertical_symmetry(int array[][MAX_SIZE], int * column, int * row) {
+
+    int start;
+    if(*column==1) return 1;
+    else start = *column/2 -1;
+    for(int j = start; j>=0; j--)
+    {
+        for(int i = 0; i<*row; i++)
+        {
+            if (array[i][j]!=array[i][*column-1-j]) return 0;
+        }
+    }
     return 1;
 }
 
 bool center_symmetry(int array[][MAX_SIZE], int * column, int * row) {
+    if(*column==1 && *row==1) return 1;
+
     return 1;
 }
 
