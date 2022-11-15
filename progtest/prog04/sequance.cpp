@@ -7,38 +7,30 @@ bool error (void) {
     return 0;
 }
 
-void yes_or_not (bool result)
+int read_seq (int * array, int * count)
 {
-    result == 1  ? printf ("ano\n") : printf("ne\n");
-}
-
-int array_declaration (int * array, int * count)
-{
-    char c = getchar();
-    int i, j = 0, sign;
-    bool flag = 1;
+    char c;
+    int   sign;
+    bool flag = true;
     while(1) {
-        i = 0;
-        while (1) {
+        if((c=getchar())==EOF || *count>2000)break;
             sign =1;
             while (isspace(c))  c = getchar();
-            while (!isspace(c)) {
-                if (c == '-' && array[i] == 0) sign = -1;
+            while (!isspace(c) && c!=EOF) {
+                if (c == '-' && array[*count] == 0) sign = -1;
                 else if ((c < '0' || c > '9')) break;
-                else array[i] = array[i] * 10 + c - '0';
+                else array[*count] = array[*count] * 10 + c - '0';
                 c = getchar();
             }
-            if(!isspace(c))break;
-            array[i] *= sign;
-            i++;
+            if(!isspace(c) && c!=EOF)
+            {
+                flag=false;
+                break;
+            }
+            array[*count] *= sign;
             ++*count;
-            c = getchar();
         }
-        if(c==EOF) break;
-        if( )
-        c = getchar();
-    }
-    if(!feof(stdin) ||  flag != 1 || *count == 0 ) return 0;
+    if(!feof(stdin) || !flag || *count == 0|*count>2000 ) return 0;
     return 1;
 }
 
@@ -46,8 +38,8 @@ int main (void)
 {
     int count=0;
     int array[MAX_SIZE];
-    printf ("Matice:\n");
-    if (!array_declaration(array, &count)) return error();
+    printf ("Posloupnost::\n");
+    if (!read_seq(array, &count)) return error();
 
     return 0;
 }
