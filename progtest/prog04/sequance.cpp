@@ -25,6 +25,7 @@ int read_seq (int * array, int * count)
         if((c=getchar())==EOF ||  *count>2000)break;
         sign =1;
         while (isspace(c))  c = getchar();
+        if(c==EOF) break;
         while (!isspace(c) && c!=EOF) {
             if (c == '-' && array[*count] == 0) sign = -1;
             else if ((c < '0' || c > '9') || !carry_int(array[*count], c)) break;
@@ -82,3 +83,4 @@ int main (void)
     printf("Pocet dvojic: %d\n", count_sum_interval(array, count, set_major, set_minor));
     return 0;
 }
+
