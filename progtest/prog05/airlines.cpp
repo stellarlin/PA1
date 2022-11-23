@@ -1,6 +1,8 @@
 
 #include<cstdio>
 #include <cstdlib>
+#include <cmath>
+#include <cfloat>
 
 #define MAX_PLANE_NAME 200
 
@@ -10,35 +12,102 @@ struct AIRPLANE_COORDINATE
     double x;
     double y;
 };
-bool error (void) {
+bool error ( AIRPLANE_COORDINATE ** a) {
+    free(*a);
     printf("Nespravny vstup.\n");
     return 0;
 }
 
 
-void initial_data (AIRPLANE_COORDINATE ** airpl_data)
+void initial_data (AIRPLANE_COORDINATE ** airpl_data, int max)
 {
-    *airpl_data = (AIRPLANE_COORDINATE *)malloc(2*sizeof(AIRPLANE_COORDINATE));
-    if(*airpl_data==NULL) initial_data(airpl_data);
+    *airpl_data = (AIRPLANE_COORDINATE *)malloc(max*sizeof(AIRPLANE_COORDINATE));
+    if(*airpl_data==NULL) initial_data(airpl_data, max);
 }
+
+void realloc_data(AIRPLANE_COORDINATE *data, AIRPLANE_COORDINATE **data_realloc, int count) {
+    *data_realloc= (AIRPLANE_COORDINATE*)realloc(data, count * sizeof(AIRPLANE_COORDINATE));
+    if(*data_realloc==NULL)realloc_data(data, data_realloc, count);
+    *data=**data_realloc;
+}
+
 bool read_coordinate(AIRPLANE_COORDINATE * airpl_data, int * count) {
-    if(scanf(" %lf , %lf : %199s", airpl_data[*count]->x, &airpl_data[*count].y, airpl_data[*count].name)!=3
-        || getchar()!='\n' ) return false;
+
+
+    if(scanf(" %lf, %lf :  %199s", &airpl_data->x, &airpl_data->y, airpl_data->name)!=3) return false;
         ++*count;
     return true;
 }
+bool dbl_eps_check( double a, double b)
+{
+    return fabs(a-b)<=DBL_EPSILON*100*b;
+}
+
+double distance (AIRPLANE_COORDINATE first, AIRPLANE_COORDINATE next, double * min)
+{
+    double dis = sqrt(pow(first.x-next.x, 2) + pow(first.y-next.y, 2));
+    if(fabs(*min-dis)<=DBL_EPSILON*100*dis) *min=dis;
+    if(dbl_eps_check(*min, dis)) *min=dis;
+    return dis;
+}
+void swap (AIRPLANE_COORDINATE * x, AIRPLANE_COORDINATE * y, AIRPLANE_COORDINATE * z)
+{
+    AIRPLANE_COORDINATE tmp;
+    tmp = *x;
+    *x = *y;
+    *y=*z;
+    *z=tmp;
+}
+
+void sort_data(AIRPLANE_COORDINATE * airpl_data, int count, double * min_distance)
+{
+    bool swapped = true;
+    int start = 0;
+    int end = count - 2;
+
+    while(swapped)
+    {
+        swapped = false;
+        for (int i = start; i < end; ++i) {
+            if (dbl_eps_check(distance(airpl_data[i], airpl_data[i + 1], min_distance),
+                              distance(airpl_data[i], airpl_data[i + 2], min_distance))) {
+                swap(&airpl_data[i], &airpl_data[i + 1], &airpl_data[i + 2]);
+                swapped = true;
+            }
+        }
+            //if nothing moved, then array is sorted.
+            if (!swapped)
+                break;
+
+            swapped = false;
+            --end;
+
+            // from right to left, doing the
+            // same comparison as in the previous stage
+        for (int i = end; i >= start; --i) {
+            if (dbl_eps_check( distance(airpl_data[i], airpl_data[i+1], min_distance), distance(airpl_data[i], airpl_data[i+2], min_distance)))
+            {
+                swap(&airpl_data[i], &airpl_data[i + 1], &airpl_data[i + 2]);
+                swapped = true;
+           }
+            }
+        }
+    }
 
 int main (void)
 {
-    int count = 0;
-    AIRPLANE_COORDINATE * airpl_data;
-    initial_data(&airpl_data);
+    int count = 0, max=2;
+    double min_distance=0;
+    AIRPLANE_COORDINATE * airpl_data, * airpl_realloc;
+    initial_data(&airpl_data, max);
     printf("Pozice letadel:\n");
     while(1)
     {
-        if(getchar()==EOF || !read_coordinate(airpl_data, &count)) break;
-
+        if(!read_coordinate(airpl_data, &count) || getchar()==EOF) break;
+        if(count>=max) realloc_data(airpl_data, &airpl_realloc, count);
     }
-    if(!feof(stdin) || count==0) return error();
+    if(!feof(stdin) || count<2) return error(&airpl_data);
+    sort_data(airpl_data, count, &min_distance);
+    free(airpl_data);
     return 0;
 }
