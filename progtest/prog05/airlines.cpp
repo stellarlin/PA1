@@ -111,7 +111,7 @@ int main (void)
     printf("Pozice letadel:\n");
     while(1)
     {
-        if(!read_coordinate(airpl_data, &count) || (с=getchar())==EOF || c=='\n') break;
+        if(!read_coordinate(airpl_data, &count) || (c=getchar())==EOF || c=='\n') break;
         if(count>=max) realloc_data(airpl_data, &airpl_realloc, count);
     }
     if(!feof(stdin) || count<2) return error(&airpl_data);
