@@ -62,6 +62,7 @@ void swap (AIRPLANE_COORDINATE * x, AIRPLANE_COORDINATE * y, AIRPLANE_COORDINATE
 void sort_data(AIRPLANE_COORDINATE * airpl_data, int count, double * min_distance)
 {
     bool swapped = true;
+    double diff_1, diff_2;
     int start = 0;
     int end = count - 2;
 
@@ -69,8 +70,10 @@ void sort_data(AIRPLANE_COORDINATE * airpl_data, int count, double * min_distanc
     {
         swapped = false;
         for (int i = start; i < end; ++i) {
-            if (dbl_eps_check(distance(airpl_data[i], airpl_data[i + 1], min_distance),
-                              distance(airpl_data[i], airpl_data[i + 2], min_distance))) {
+            diff_1=distance(airpl_data[i], airpl_data[i + 1], min_distance);
+            diff_2= distance(airpl_data[i+1], airpl_data[i + 2], min_distance);
+            if (dbl_eps_check(diff_2,
+                             diff_1)) {
                 swap(&airpl_data[i], &airpl_data[i + 1], &airpl_data[i + 2]);
                 swapped = true;
             }
@@ -85,7 +88,11 @@ void sort_data(AIRPLANE_COORDINATE * airpl_data, int count, double * min_distanc
             // from right to left, doing the
             // same comparison as in the previous stage
         for (int i = end; i >= start; --i) {
-            if (dbl_eps_check( distance(airpl_data[i], airpl_data[i+1], min_distance), distance(airpl_data[i], airpl_data[i+2], min_distance)))
+            diff_1=distance(airpl_data[i], airpl_data[i + 1], min_distance);
+            diff_2= distance(airpl_data[i+1], airpl_data[i + 2], min_distance);
+
+            if (dbl_eps_check(diff_2,
+                              diff_1))
             {
                 swap(&airpl_data[i], &airpl_data[i + 1], &airpl_data[i + 2]);
                 swapped = true;
@@ -97,13 +104,14 @@ void sort_data(AIRPLANE_COORDINATE * airpl_data, int count, double * min_distanc
 int main (void)
 {
     int count = 0, max=2;
+    char c;
     double min_distance=0;
     AIRPLANE_COORDINATE * airpl_data, * airpl_realloc;
     initial_data(&airpl_data, max);
     printf("Pozice letadel:\n");
     while(1)
     {
-        if(!read_coordinate(airpl_data, &count) || getchar()==EOF) break;
+        if(!read_coordinate(airpl_data, &count) || (с=getchar())==EOF || c=='\n') break;
         if(count>=max) realloc_data(airpl_data, &airpl_realloc, count);
     }
     if(!feof(stdin) || count<2) return error(&airpl_data);
