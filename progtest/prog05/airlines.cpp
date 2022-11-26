@@ -55,7 +55,7 @@ bool read_coordinate(AIRPLANE_COORDINATE * airpl_data, int * count) {
 }
 bool dbl_eps_check( double a, double b)
 {
-    return fabs(a-b)>=DBL_EPSILON*100*(fabs(b) + fabs(a));
+    return fabs(a-b)>DBL_EPSILON*fabs(a+b)*30;
 }
 
 
@@ -64,59 +64,6 @@ double distance (AIRPLANE_COORDINATE first, AIRPLANE_COORDINATE next)
    return  sqrt(pow(first.x-next.x, 2) + pow(first.y-next.y, 2));
 
 }
-/*
-void swap (AIRPLANE_COORDINATE * x, AIRPLANE_COORDINATE * y, AIRPLANE_COORDINATE * z)
-{
-    AIRPLANE_COORDINATE  tmp;
-    tmp = *x;
-    *x = *y;
-    *y=*z;
-    *z=tmp;
-}
-
-void sort_data(AIRPLANE_COORDINATE * airpl_data, int count, double * min_distance)
-{
-    bool swapped = true;
-    double diff_1, diff_2;
-    int start = 0;
-    int end = count - 2;
-    *min_distance =distance(airpl_data[0], airpl_data[1], min_distance);
-    while(swapped)
-    {
-        swapped = false;
-        for (int i = start; i < end; ++i) {
-            diff_1=distance(airpl_data[i], airpl_data[i + 1], min_distance);
-            diff_2= distance(airpl_data[i+1], airpl_data[i + 2], min_distance);
-            if (dbl_eps_check(diff_2,
-                             diff_1) && diff_2<diff_1) {
-                swap(&airpl_data[i], &airpl_data[i + 1], &airpl_data[i + 2]);
-                swapped = true;
-            }
-        }
-            //if nothing moved, then array is sorted.
-            if (!swapped)
-                break;
-
-            swapped = false;
-            --end;
-
-            // from right to left, doing the
-            // same comparison as in the previous stage
-        for (int i = end; i >= start; --i) {
-            diff_1=distance(airpl_data[i], airpl_data[i + 1], min_distance);
-            diff_2= distance(airpl_data[i+1], airpl_data[i + 2], min_distance);
-
-            if (dbl_eps_check(diff_2,
-                              diff_1) && diff_2 < diff_1)
-            {
-                swap(&airpl_data[i], &airpl_data[i + 1], &airpl_data[i + 2]);
-                swapped = true;
-           }
-            }
-        }
-    }
-
- */
 
 void min_dist_count(AIRPLANE_COORDINATE * airpl_data, int count, double * global_min, MIN_ARRAY * min_arr) {
     double diff;
@@ -129,7 +76,8 @@ void min_dist_count(AIRPLANE_COORDINATE * airpl_data, int count, double * global
                 min_arr[i].min = diff;
                 min_arr[i].count = 0;
             }
-            if (diff==min_arr[i].min) min_arr[i].count++;
+
+            if (!dbl_eps_check(diff, min_arr[i].min)) min_arr[i].count++;
         }
     }
 }
@@ -139,7 +87,7 @@ void global_count_sum (MIN_ARRAY * min_arr,  double * global_min, int * global_c
 {
     for(int i = 0; i<count; i++)
     {
-        if(min_arr[i].min==*global_min) *global_count+=min_arr[i].count;
+        if(!dbl_eps_check(min_arr[i].min,*global_min)) *global_count+=min_arr[i].count;
     }
 }
 
@@ -159,10 +107,10 @@ void min_pair_print(AIRPLANE_COORDINATE *airpl_data, int count, double global_mi
     double diff;
 
     for (int i = 0; i < count - 1; i++) {
-        if (min_arr[i].min != global_min) continue;
+        if (dbl_eps_check(min_arr[i].min, global_min)) continue;
         for (int j = i+1; j < count; j++) {
             diff = distance(airpl_data[i], airpl_data[j]);
-            if(diff!=global_min)continue;
+            if(dbl_eps_check(diff,global_min))continue;
             print_pair(airpl_data[i], airpl_data[j]);
         }
     }
