@@ -12,6 +12,13 @@ struct AIRPLANE_COORDINATE
     double x;
     double y;
 };
+
+struct MIN_ARRAY
+{
+    double min;
+    int count;
+};
+
 bool error ( AIRPLANE_COORDINATE ** a) {
     free(*a);
     printf("Nespravny vstup.\n");
@@ -25,6 +32,13 @@ void initial_data (AIRPLANE_COORDINATE ** airpl_data, int max)
     if(*airpl_data==NULL) initial_data(airpl_data, max);
 }
 
+void initial_min_array(MIN_ARRAY ** min_arr, int count)
+{
+    *min_arr= (MIN_ARRAY *)malloc(count*sizeof(MIN_ARRAY));
+    if(*min_arr==NULL) initial_min_array(min_arr, count);
+
+}
+
 void realloc_data(AIRPLANE_COORDINATE **data, AIRPLANE_COORDINATE **data_realloc,  int * max) {
     *data_realloc= (AIRPLANE_COORDINATE*)realloc(*data, (*max) * 2 * sizeof(AIRPLANE_COORDINATE));
     if(*data_realloc==NULL)realloc_data(data, data_realloc,  max);
@@ -35,88 +49,104 @@ void realloc_data(AIRPLANE_COORDINATE **data, AIRPLANE_COORDINATE **data_realloc
 bool read_coordinate(AIRPLANE_COORDINATE * airpl_data, int * count) {
 
 
-    if(scanf(" %lf, %lf :  %199s", &airpl_data[*count].x, &airpl_data[*count].y, airpl_data[*count].name)!=3) return false;
-        ++*count;
+    if(scanf(" %lf , %lf :  %199s", &airpl_data[*count].x, &airpl_data[*count].y, airpl_data[*count].name)!=3) return false;
+    ++*count;
     return true;
 }
 bool dbl_eps_check( double a, double b)
 {
-    return fabs(a-b)>=DBL_EPSILON*100*(fabs(b) + fabs(a));
+    return fabs(a-b)>DBL_EPSILON*fabs(a+b)*30;
 }
 
 
-double distance (AIRPLANE_COORDINATE first, AIRPLANE_COORDINATE next, double * min)
+double distance (AIRPLANE_COORDINATE first, AIRPLANE_COORDINATE next)
 {
-    double dis = sqrt(pow(first.x-next.x, 2) + pow(first.y-next.y, 2));
-    if(dbl_eps_check(*min, dis) && dis<*min) *min=dis;
-    return dis;
-}
-void swap (AIRPLANE_COORDINATE * x, AIRPLANE_COORDINATE * y, AIRPLANE_COORDINATE * z)
-{
-    AIRPLANE_COORDINATE  tmp;
-    tmp = *x;
-    *x = *y;
-    *y=*z;
-    *z=tmp;
+    return  sqrt(pow(first.x-next.x, 2) + pow(first.y-next.y, 2));
+
 }
 
-void sort_data(AIRPLANE_COORDINATE * airpl_data, int count, double * min_distance)
-{
-    bool swapped = true;
-    double diff_1, diff_2;
-    int start = 0;
-    int end = count - 2;
-    *min_distance =distance(airpl_data[0], airpl_data[1], min_distance);
-    while(swapped)
-    {
-        swapped = false;
-        for (int i = start; i < end; ++i) {
-            diff_1=distance(airpl_data[i], airpl_data[i + 1], min_distance);
-            diff_2= distance(airpl_data[i+1], airpl_data[i + 2], min_distance);
-            if (dbl_eps_check(diff_2,
-                             diff_1) && diff_2<diff_1) {
-                swap(&airpl_data[i], &airpl_data[i + 1], &airpl_data[i + 2]);
-                swapped = true;
+void min_dist_count(AIRPLANE_COORDINATE * airpl_data, int count, double * global_min, MIN_ARRAY * min_arr) {
+    double diff;
+
+    for (int i = 0; i < count - 1; i++) {
+        for (int j = i+1; j < count; j++) {
+            diff = distance(airpl_data[i], airpl_data[j]);
+            if(j==1 || (dbl_eps_check(*global_min, diff) && diff<*global_min)) *global_min=diff;
+            if (j == i+1 || (dbl_eps_check(diff, min_arr[i].min) && diff < min_arr[i].min)) {
+                min_arr[i].min = diff;
+                min_arr[i].count = 0;
             }
-        }
-            //if nothing moved, then array is sorted.
-            if (!swapped)
-                break;
 
-            swapped = false;
-            --end;
-
-            // from right to left, doing the
-            // same comparison as in the previous stage
-        for (int i = end; i >= start; --i) {
-            diff_1=distance(airpl_data[i], airpl_data[i + 1], min_distance);
-            diff_2= distance(airpl_data[i+1], airpl_data[i + 2], min_distance);
-
-            if (dbl_eps_check(diff_2,
-                              diff_1) || diff_2 < diff_1)
-            {
-                swap(&airpl_data[i], &airpl_data[i + 1], &airpl_data[i + 2]);
-                swapped = true;
-           }
-            }
+            if (!dbl_eps_check(diff, min_arr[i].min)) min_arr[i].count++;
         }
     }
+}
+
+
+void global_count_sum (MIN_ARRAY * min_arr,  double * global_min, int * global_count, int count )
+{
+    for(int i = 0; i<count; i++)
+    {
+        if(!dbl_eps_check(min_arr[i].min,*global_min)) *global_count+=min_arr[i].count;
+    }
+}
+
+void print_global_min(double min) {
+    printf("Vzdalenost nejblizsich letadel: %f\n", min);
+}
+void print_global_count(int count) {
+    printf("Nalezenych dvojic: %d\n", count);
+}
+
+void print_pair(AIRPLANE_COORDINATE first, AIRPLANE_COORDINATE second) {
+    printf("%s - %s\n", first.name, second.name);
+}
+
+void min_pair_print(AIRPLANE_COORDINATE *airpl_data, int count, double global_min, MIN_ARRAY *min_arr) {
+
+    double diff;
+
+    for (int i = 0; i < count - 1; i++) {
+        if (dbl_eps_check(min_arr[i].min, global_min)) continue;
+        for (int j = i+1; j < count; j++) {
+            diff = distance(airpl_data[i], airpl_data[j]);
+            if(dbl_eps_check(diff,global_min))continue;
+            print_pair(airpl_data[i], airpl_data[j]);
+        }
+    }
+
+}
 
 int main (void)
 {
     int count = 0, max=2;
-    char c;
-    double min_distance=0;
+    double global_min=0;
+    int global_count = 0;
+
+    MIN_ARRAY *min_array;
     AIRPLANE_COORDINATE * airpl_data, * airpl_realloc;
     initial_data(&airpl_data, max);
     printf("Pozice letadel:\n");
     while(1)
     {
-        if(!read_coordinate(airpl_data, &count) || (c=getchar())==EOF || c=='/') break;
+        if(!read_coordinate(airpl_data, &count) || getchar()==EOF) break;
         if(count+1>=max) realloc_data(&airpl_data, &airpl_realloc, &max);
     }
-    if((!feof(stdin) && c!='\n') || count<2) return error(&airpl_data);
-    sort_data(airpl_data, count, &min_distance);
+    if(!feof(stdin) || count<2) return error(&airpl_data);
+
+    initial_min_array(&min_array, count);
+    for(int i = 0; i<count; i++)
+    {
+        min_array[i].min=0;
+        min_array[i].count=0;
+    }
+
+    min_dist_count(airpl_data, count, &global_min, min_array);
+    print_global_min (global_min);
+    global_count_sum(min_array, &global_min, &global_count, count);
+    print_global_count (global_count);
+    min_pair_print(airpl_data, count, global_min, min_array);
     free(airpl_data);
+    free(min_array);
     return 0;
 }
