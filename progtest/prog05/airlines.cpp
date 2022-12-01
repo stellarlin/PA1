@@ -49,8 +49,8 @@ void realloc_data(AIRPLANE_COORDINATE **data, AIRPLANE_COORDINATE **data_realloc
 bool read_coordinate(AIRPLANE_COORDINATE * airpl_data, int * count) {
 
 
-    if(scanf(" %lf, %lf :  %199s", &airpl_data[*count].x, &airpl_data[*count].y, airpl_data[*count].name)!=3) return false;
-        ++*count;
+    if(scanf(" %lf , %lf :  %199s", &airpl_data[*count].x, &airpl_data[*count].y, airpl_data[*count].name)!=3) return false;
+    ++*count;
     return true;
 }
 bool dbl_eps_check( double a, double b)
@@ -62,7 +62,6 @@ bool dbl_eps_check( double a, double b)
 double distance (AIRPLANE_COORDINATE first, AIRPLANE_COORDINATE next)
 {
    return  sqrt(pow(first.x-next.x, 2) + pow(first.y-next.y, 2));
-
 }
 
 void min_dist_count(AIRPLANE_COORDINATE * airpl_data, int count, double * global_min, MIN_ARRAY * min_arr) {
@@ -120,7 +119,6 @@ void min_pair_print(AIRPLANE_COORDINATE *airpl_data, int count, double global_mi
 int main (void)
 {
     int count = 0, max=2;
-    char c;
     double global_min=0;
     int global_count = 0;
 
@@ -130,10 +128,10 @@ int main (void)
     printf("Pozice letadel:\n");
     while(1)
     {
-        if(!read_coordinate(airpl_data, &count) || (c=getchar())==EOF || c=='/') break;
+        if(!read_coordinate(airpl_data, &count) || getchar()==EOF) break;
         if(count+1>=max) realloc_data(&airpl_data, &airpl_realloc, &max);
     }
-    if((!feof(stdin) && c!='\n') || count<2) return error(&airpl_data);
+    if(!feof(stdin) || count<2) return error(&airpl_data);
 
     initial_min_array(&min_array, count);
     for(int i = 0; i<count; i++)
