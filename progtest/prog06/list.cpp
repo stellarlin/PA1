@@ -135,7 +135,7 @@ bool read_line (PRODUCT **products, int * product_id, int num, int * max_product
         //read stdin line per line, if line starts with # or is empty, loop will end
        if(realloc_fgets(products, *product_id, num, empty_line, hash_line, EOF_line, list_line)==0
         || *EOF_line == 1 || *empty_line ==1 || *hash_line==1) break;
-       ++*product_id;
+        (*product_id)++;
     }
     if((list_line && *EOF_line ==0 && *empty_line==0 && *hash_line==0) || (!list_line && *EOF_line==1 )) return 0;
     return 1;
@@ -145,7 +145,7 @@ bool read_line (PRODUCT **products, int * product_id, int num, int * max_product
 bool read_shelf_num(int *num) {
     char c;
     int next_num;
-    while (isspace(c =getchar()) && c!='\n') {}
+    while (isspace(c =getchar()) && c!='\n' && EOF) {}
     if( c!='#')return 0;
     if (scanf("%d", &next_num)!=1 || next_num != *num+1 ) return 0;
     if(getchar()!='\n')return 0;
@@ -170,7 +170,7 @@ bool read_shelf_content(PRODUCT ** available, int * max_product, int * shelf_num
 //read input for  list of products line per line until EOF or another list
 bool  read_list_content(PRODUCT ** list, int * max_list, int *list_id, bool * EOF_line) {
 
-    bool empty_line=0, hash_line;
+    bool empty_line=0, hash_line=0;
     if( !read_line(list, list_id, 0, max_list, &empty_line, &hash_line, EOF_line, 1)
          || (empty_line!=1 && *EOF_line!=1) || *list_id ==0 ) return 0;
     return 1;
@@ -210,46 +210,31 @@ void copy_tmp_name (char ** des, char *  src, int max_char)
 void find_among_products(PRODUCT * list, PRODUCT * available, int list_max_id, int product_max_id, int max_shelf) {
 
     char *tmp_name1, *tmp_name2;
+    int N_A=max_shelf+1;
+    int shelf_storage, idx_storage=0;
     for (int i = 0; i < list_max_id; i++) {
 
-        list[i].shelf = max_shelf+1;
+        list[i].shelf = N_A;
+        shelf_storage = N_A;
         copy_tmp_name(&tmp_name1,list[i].name, list[i].max_name);
+
         for (int j = 0; j < product_max_id; j++) {
 
             copy_tmp_name(&tmp_name2, available[j].name, available[j].max_name);
-
-            list[i].shelf = IsEqualProductName(tmp_name1, tmp_name2, available[j].shelf, max_shelf+1);
-            if (list[i].shelf != max_shelf+1) {
+            list[i].shelf = IsEqualProductName(tmp_name1, tmp_name2, available[j].shelf, N_A);
+            if (list[i].shelf == N_A) {
+                list[i].shelf = IsSimilarProductName(tmp_name1, tmp_name2, available[j].shelf, N_A);
+                if (list[i].shelf != N_A && shelf_storage ==N_A)  shelf_storage = list[i].shelf, idx_storage = j;
+            }
+            else{
                 list[i].product_idx = j;
                 free(tmp_name2);
                 break;
             }
             free(tmp_name2);
-
         }
-
-        if (list[i].shelf != max_shelf+1) {
-            free(tmp_name1);
-            continue;
-        }
-        for (int j = 0; j < product_max_id; j++) {
-
-            copy_tmp_name(&tmp_name2, available[j].name, available[j].max_name);
-
-            list[i].shelf = IsSimilarProductName(tmp_name1, tmp_name2, available[j].shelf, max_shelf+1);
-            if (list[i].shelf != max_shelf+1) {
-                list[i].product_idx = j;
-                free(tmp_name2);
-                break;
-            }
-            free(tmp_name2);
-
-        }
-
-
+        if (list[i].shelf==N_A &&  shelf_storage!=N_A) list[i].shelf=shelf_storage, list[i].product_idx=idx_storage;
         free(tmp_name1);
-
-
     }
 }
 
@@ -305,19 +290,22 @@ void print_list(PRODUCT *list, int list_max_id, PRODUCT  * available, int max_sh
 bool list_optimization(PRODUCT * list, PRODUCT * available, int max_shelf, int product_max_id)
 {
     int list_id, max_list = 10;
+    bool broken = 0;
     bool EOF_line =0;
     while(1)
     {
        list_id = 0;
         initial_array(&list, max_list);
-    if(! read_list_content(&list, &max_list, &list_id, &EOF_line)) break;
-    find_among_products (list, available, list_id, product_max_id, max_shelf);
-    sort_list(list, list_id);
-    print_list(list, list_id, available, max_shelf);
-    free_products(list, list_id);
-    if(EOF_line==1) break;
+        if( ! read_list_content(&list, &max_list, &list_id, &EOF_line)) { broken =1; break;}
+        find_among_products (list, available, list_id, product_max_id, max_shelf);
+        sort_list(list, list_id);
+        print_list(list, list_id, available, max_shelf);
+        free_products(list, list_id);
+        if(EOF_line==1) break;
+
     }
-    if(EOF_line!=1)
+
+    if(EOF_line!=1 || broken)
     {
         free_products(list, list_id);
         return 0;
