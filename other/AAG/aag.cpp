@@ -52,14 +52,18 @@ NFA united_automat(const NFA &first, const NFA &second) {
     set_union(begin(first.m_FinalStates), end(first.m_FinalStates), begin(second.m_FinalStates),
               end(second.m_FinalStates), inserter(unit.m_FinalStates, begin(unit.m_FinalStates)));
 
+
     //????????????????//
-    unit.m_Transitions.merge(first.m_Transitions);
-    unit.m_Transitions.insert(second.m_Transitions.begin(), second.m_Transitions.end());
+    unit.m_Transitions.insert(first.m_Transitions.begin(), first.m_Transitions.end());
+    {
+        //https://www.geeksforgeeks.org/merge-two-maps-of-array-into-one-sorted-map-of-array/
+    }
+
     //????????????????//
     if(first.m_InitialState!=second.m_InitialState)
     {
-    unit.m_States.insert(*prev(end(unit.m_States))+1);
-        unit.m_Transitions.insert({{*prev(end(unit.m_States)), '\0'}, {first.m_InitialState,second.m_InitialState}});
+        unit.m_States.insert(*prev(end(unit.m_States))+1);
+        // unit.m_transition (unit.m_init) = first.m_Translition (...,first. m_init) U second.m_Translition (...,second. m_init)
         unit.m_InitialState = *prev(end(unit.m_States));
     }
     else unit.m_InitialState = first.m_InitialState;
