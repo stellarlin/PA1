@@ -42,6 +42,7 @@ struct DFA {
 };
 
 #endif
+
 set<State> merge_state ( set<State>& set1,  set<State> set2)
 {
     set<State> res_state;
@@ -49,7 +50,6 @@ set<State> merge_state ( set<State>& set1,  set<State> set2)
                set2.begin(), set2.end(), inserter(res_state, res_state.begin()));
     return res_state;
 }
-
 map<pair<State, Symbol>, set<State>>  merged_Transitions ( const map<pair<State, Symbol>, set<State>>& map1,
                                                           const map<pair<State, Symbol>, set<State>>& map2) {
     map<pair<State, Symbol>, set<State>> res_map;
@@ -65,30 +65,42 @@ map<pair<State, Symbol>, set<State>>  merged_Transitions ( const map<pair<State,
         return res_map;
 
 }
-
-map<pair<State, Symbol>, set<State>>  merged_Init_Transitions ( const map<pair<State, Symbol>, set<State>>& src,
-                                                                State & init1, State & init2, State & new_init) {
-        map<pair<State, Symbol>, set<State>> res_map, tmp_map;
-        auto new_init_tr_key = res_map.end();
-        res_map.insert(src.begin(), src.end());
+map<pair<State, Symbol>, set<State>>  merged_Init_Transitions ( const map<pair<State, Symbol>, set<State>>& src,State  init1, State  init2, State  new_init) {
+    map<pair<State, Symbol>, set<State>> res_map, tmp_map;
+    res_map.insert(src.begin(), src.end());
     for (auto itr: res_map) {
 
-        if(itr.first.first == init1 || itr.first.first ==init2)
-        {
-            pair<State, Symbol> tmp_pair = {new_init, itr.first.second};
-                if (res_map.find(make_pair(new_init, itr.first.second)) res_map.insert( {{new_init, itr.first.second}, itr.second});
-            for(auto  tmp_itr = new_init_tr_key; tmp_itr!=res_map.end(); tmp_itr++)
-            {
+        if (itr.first.first == init1 || itr.first.first == init2) {
+            tmp_map.insert({{new_init, itr.first.second},
+                            {itr.second}});
+            for (auto itr2: tmp_map) {
+                if (res_map.find(itr2.first) == res_map.end()) res_map.insert({itr2.first, itr2.second});
+                else {
+                   auto tmp_itr = res_map.find(itr2.first);
 
+                    res_map[tmp_itr->first] = merge_state(itr2.second, tmp_itr->second);
+                }
             }
-
-            }
-
+            tmp_map.clear();
         }
-
+    }
         return res_map;
 
+}
+set<State> merge_final_states(set<State> src, State  init1, State init2, State new_init) {
+    set<State> res;
+    res.insert(src.begin(), src.end());
+    for(auto itr :src)
+    {
+        if(itr == init1 || itr == init2)
+        {
+            res.insert(new_init);
+          break;
+        }
+
     }
+    return res;
+}
 
 NFA united_automat(const NFA &first, const NFA &second) {
     NFA unit;
@@ -99,20 +111,18 @@ NFA united_automat(const NFA &first, const NFA &second) {
     set_union(begin(first.m_FinalStates), end(first.m_FinalStates), begin(second.m_FinalStates),
               end(second.m_FinalStates), inserter(unit.m_FinalStates, begin(unit.m_FinalStates)));
 
-
-    //????????????????//
     unit.m_Transitions = merged_Transitions(first.m_Transitions, second.m_Transitions);
-    {
-        //https://www.geeksforgeeks.org/merge-two-maps-of-array-into-one-sorted-map-of-array/
-    }
     if(first.m_InitialState!=second.m_InitialState)
     {
         unit.m_States.insert(*prev(end(unit.m_States))+1);
-
-        // unit.m_transition (unit.m_init) = first.m_Translition (...,first. m_init) U second.m_Translition (...,second. m_init)
         unit.m_InitialState = *prev(end(unit.m_States));
+        unit.m_Transitions= merged_Init_Transitions(unit.m_Transitions, first.m_InitialState, second.m_InitialState, unit.m_InitialState);
+        unit.m_FinalStates = merge_final_states(unit.m_FinalStates, first.m_InitialState, second.m_InitialState, unit.m_InitialState);
+
     }
     else unit.m_InitialState = first.m_InitialState;
+
+
     return unit;
 }
 
