@@ -66,22 +66,17 @@ map<pair<State, Symbol>, set<State>>  merged_Transitions ( const map<pair<State,
 
 }
 map<pair<State, Symbol>, set<State>>  merged_Init_Transitions ( const map<pair<State, Symbol>, set<State>>& src,State  init1, State  init2, State  new_init) {
-    map<pair<State, Symbol>, set<State>> res_map, tmp_map;
+    map<pair<State, Symbol>, set<State>> res_map;
     res_map.insert(src.begin(), src.end());
     for (auto itr: res_map) {
 
         if (itr.first.first == init1 || itr.first.first == init2) {
-            tmp_map.insert({{new_init, itr.first.second},
-                            {itr.second}});
-            for (auto itr2: tmp_map) {
-                if (res_map.find(itr2.first) == res_map.end()) res_map.insert({itr2.first, itr2.second});
+             auto itr2 = make_pair(make_pair(new_init, itr.first.second), itr.second);
+                if (res_map.find( itr2.first) == res_map.end()) res_map.insert({itr2.first, itr2.second});
                 else {
                    auto tmp_itr = res_map.find(itr2.first);
-
                     res_map[tmp_itr->first] = merge_state(itr2.second, tmp_itr->second);
                 }
-            }
-            tmp_map.clear();
         }
     }
         return res_map;
@@ -102,7 +97,7 @@ set<State> merge_final_states(set<State> src, State  init1, State init2, State n
     return res;
 }
 
-NFA united_automat(const NFA &first, const NFA &second) {
+NFA unification_automat(const NFA &first, const NFA &second) {
     NFA unit;
     set_union(begin(first.m_States), end(first.m_States), begin(second.m_States),
               end(second.m_States), inserter(unit.m_States, begin(unit.m_States)));
@@ -121,9 +116,115 @@ NFA united_automat(const NFA &first, const NFA &second) {
 
     }
     else unit.m_InitialState = first.m_InitialState;
-
-
     return unit;
+}
+
+set<State> find_all_achievable_state(State current, const NFA &src, const  set<State> & current_set)
+{
+   set<State> res =current_set;
+    if(src.m_FinalStates.find(current) != src.m_FinalStates.end() && current!=src.m_InitialState ) return res;
+    for(auto itr :src.m_Transitions)
+    {
+        if(current_set.size()==src.m_States.size()) return res;
+        if(itr.first.first == current)
+        {
+            for(auto itr2 : itr.second)
+            {
+                if(itr2==current)continue;
+                res.insert(itr2);
+                res = find_all_achievable_state(itr2, src, res);
+            }
+            }
+        }
+
+    return res;
+}
+
+NFA delete_unachievable_state(const NFA &src, set<State> achievable_state) {
+    NFA res =src;
+    //delete states
+    for(auto itr: res.m_States)
+    {
+        if(achievable_state.find(itr) == achievable_state.end()) res.m_States.erase(itr);
+    }
+    //delete transition
+    for(auto itr= res.m_Transitions.cbegin(); itr!=res.m_Transitions.cend();)
+    {
+        if(achievable_state.find(itr->first.first) == achievable_state.end()) res.m_Transitions.erase( itr++);
+        else ++itr;
+    }
+    return res;
+}
+
+NFA unachievable_state_remove(const NFA &src)
+{
+   NFA all_achievable=src;
+   set<State> achievable_state;
+    achievable_state.insert(src.m_InitialState);
+   auto current_state = src.m_InitialState;
+   achievable_state = find_all_achievable_state(current_state, src, achievable_state);
+   if(achievable_state.size()!=src.m_States.size()) all_achievable =  delete_unachievable_state(src, achievable_state);
+   return all_achievable;
+
+}
+
+set<State> find_all_useful_state(unsigned int current_state, NFA src, set<State> current_set) {
+    set<State> res = current_set;
+    if(current_state  == src.m_InitialState)return res;
+    for(auto itr :src.m_Transitions)
+    {
+        if(current_set.size()==src.m_States.size()) return res;
+        if(itr.second.find(current_state) !=itr.second.end())
+        {
+            //if(itr2==current)continue;
+                if(itr.first.first==current_state)continue;
+                res.insert(itr.first.first);
+                res = find_all_useful_state(itr.first.first, src, res);
+            }
+        }
+    return res;
+}
+
+NFA delete_useless_state(NFA src, set<State> useful_states) {
+    NFA res =src;
+    //delete states
+    for(auto itr: res.m_States)
+    {
+        if(useful_states.find(itr) == useful_states.end()) res.m_States.erase(itr);
+    }
+    //delete transition
+    for(auto itr= res.m_Transitions.cbegin(); itr!=res.m_Transitions.cend();)
+    {
+       if(useful_states.find(itr->first.first) == useful_states.end()) res.m_Transitions.erase( itr++);
+    //   else  if(useful_states.find(*itr2) !=useful_states.end()) itr->second.erase(itr2++);
+    //           }
+          else   ++itr;
+    }
+
+    for(auto itr : res.m_Transitions)
+    {
+        for(auto itr2 : itr.second)
+        {
+            if(useful_states.find(itr2) !=useful_states.end()) itr.second.erase(itr2);
+        }
+    }
+    return res;
+
+}
+
+NFA useless_state_remove(NFA src) {
+    NFA all_useful=src;
+    set<State> useful_state;
+    useful_state.insert(src.m_FinalStates.begin(), src.m_FinalStates.end());
+    for( auto itr : src.m_FinalStates)
+    {
+        useful_state = find_all_useful_state(itr, src, useful_state);
+        if(useful_state.size()!=src.m_States.size())delete_useless_state(src, useful_state);
+    }
+  //  auto current_state = src.m_InitialState;
+    //achievable_state = find_all_achievable_state(current_state, src, achievable_state);
+   // all_achievable =  delete_unachievable_state(src, achievable_state);
+    return all_useful;
 }
 
 DFA unify(const NFA& a, const NFA& b)
@@ -131,8 +232,9 @@ DFA unify(const NFA& a, const NFA& b)
 NFA tmp;
 DFA res;
 
-tmp = united_automat(a, b);
-
+tmp = unification_automat(a, b);
+tmp = unachievable_state_remove(tmp);
+tmp = useless_state_remove(tmp);
     return res;
 }
 
