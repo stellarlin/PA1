@@ -224,13 +224,13 @@ NFA useless_state_remove(NFA src) {
 map<pair<State, Symbol>, set<State>>  merge_transitions_determ ( const map<pair<State, Symbol>, set<State>>& src,
                                                            set<State> state_to_copy, State state_num)
 {
-    map <::pair < State, Symbol>, set<State>> res = src;
+    map <::pair < State, Symbol>, set<State>> res;
     for (auto itr: src) {
         if(state_to_copy.find(itr.first.first) == state_to_copy.end()) continue;
 
-        if (res.find(make_pair(state_num, itr.first.second)) == res.end()) res.insert({make_pair(state_num, itr.first.second), itr.second});
+        if (src.find(make_pair(state_num, itr.first.second)) == src.end()) res.insert({make_pair(state_num, itr.first.second), itr.second});
         else {
-            auto tmp_itr = res.find(make_pair(state_num, itr.first.second));
+            auto tmp_itr = src.find(make_pair(state_num, itr.first.second));
             set<State> tmp_set = merge_state(itr.second, tmp_itr->second);
             res[tmp_itr->first] = tmp_set;
         }
@@ -238,6 +238,46 @@ map<pair<State, Symbol>, set<State>>  merge_transitions_determ ( const map<pair<
     return res;
 }
 
+map<pair<State, Symbol>, set<State>>  remove_multistates ( map<pair<State, Symbol>, set<State>> multi_states, map<pair<State, Symbol>, set<State>> src, bool & done, DFA automat) {
+    map<pair<State, Symbol>, set<State>> all_states;
+    all_states.insert(src.begin(), src.end());
+    if(done) return all_states;
+    for (auto itr =  all_states.cbegin(); itr!= all_states.cend(); ) {
+        if (itr->second.size() == 1)
+        {
+            ++itr;
+            continue;
+        }
+        else {
+            automat.m_States.insert(*prev(end(automat.m_States)) + 1);
+            State new_state = *prev(end(automat.m_States));
+
+            set<State> tmp_set;
+            tmp_set.insert(new_state);
+
+
+            multi_states.insert({itr->first, tmp_set});
+            tmp_set.clear();
+            for (auto itr2: itr->second) {
+                if (automat.m_FinalStates.find(itr2) != automat.m_FinalStates.end()) {
+                    automat.m_FinalStates.insert(new_state);
+                }
+            }
+            multi_states = merge_transitions_determ(all_states, itr->second, new_state);
+            all_states.erase(itr++);
+        }
+    }
+    if(all_states.empty())
+    {
+        done =1;
+        return multi_states;
+    }
+    all_states.insert(multi_states.begin(), multi_states.end());
+    multi_states.clear();
+    all_states = remove_multistates(multi_states, all_states, done, automat);
+    return all_states;
+
+}
 DFA determinisation(NFA src) {
     DFA res;
     res.m_States=src.m_States;
@@ -245,35 +285,10 @@ DFA determinisation(NFA src) {
     res.m_FinalStates=src.m_FinalStates;
     res.m_InitialState=src.m_InitialState;
 
-    map<pair<State, Symbol>, set<State>> tmp_transition;
+    map<pair<State, Symbol>, set<State>> tmp_transition, multi_trans;
     tmp_transition.insert(src.m_Transitions.begin(), src.m_Transitions.end());
-   for(auto itr = tmp_transition.begin(); itr!=tmp_transition.end(); itr++)
-    {
-
-        if(itr->second.size()==1) continue;
-        else
-        {
-            res.m_States.insert(*prev(end(res.m_States))+1);
-            State new_state = *prev(end(res.m_States));
-
-            set<State> tmp_set;
-            tmp_set.insert(new_state);
-
-
-            tmp_transition.insert({itr->first, tmp_set});
-            for(auto itr2 :itr->second)
-            {
-                if(res.m_FinalStates.find(itr2)!=res.m_FinalStates.end())
-                {
-                    res.m_FinalStates.insert(new_state);
-                }
-            }
-            tmp_transition = merge_transitions_determ(tmp_transition, itr->second, new_state);
-            SECONM
-            tmp_transition.erase(itr->first);
-
-        }
-    }
+    bool done =0;
+    tmp_transition = remove_multistates(multi_trans, tmp_transition, done, res);
     return res;
 }
 
