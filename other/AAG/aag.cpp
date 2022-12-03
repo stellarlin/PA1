@@ -50,72 +50,72 @@ set<State> merge_state ( set<State>& set1,  set<State> set2)
                set2.begin(), set2.end(), inserter(res_state, res_state.begin()));
     return res_state;
 }
-map<pair<State, Symbol>, set<State>>  merged_Transitions ( const map<pair<State, Symbol>, set<State>>& map1,
-                                                          const map<pair<State, Symbol>, set<State>>& map2) {
-    map<pair<State, Symbol>, set<State>> res_map;
-    res_map.insert(map1.begin(), map1.end());
-    for (auto itr: map2) {
-        if (res_map.find(itr.first) == res_map.end()) res_map.insert({itr.first, itr.second});
-        else {
-            auto tmp_itr = res_map.find(itr.first);
-            set<State> tmp_set = merge_state(itr.second, tmp_itr->second);
-            res_map[itr.first] = tmp_set;
-        }
+
+
+map<pair<State, Symbol>, set<State>>  merged_start_Transitions ( NFA src,  NFA second_automat,  map <State, State> changed_states) {
+    map<pair<State, Symbol>, set<State>> res;
+    res = src.m_Transitions;
+    for (auto itr:  second_automat.m_Transitions) {
+        set<State> changed_set;
+        for (auto itr2: itr.second) changed_set.insert(changed_states.find(itr2)->second);
+        res.insert({{changed_states.find(itr.first.first)->second, itr.first.second}, changed_set});
     }
-        return res_map;
+    return res;
 
 }
 map<pair<State, Symbol>, set<State>>  merged_Init_Transitions ( const map<pair<State, Symbol>, set<State>>& src,State  init1, State  init2, State  new_init) {
-    map<pair<State, Symbol>, set<State>> res_map;
-    res_map.insert(src.begin(), src.end());
-    for (auto itr: res_map) {
+    map<pair<State, Symbol>, set<State>> res =src;
+    for (auto itr: res) {
 
         if (itr.first.first == init1 || itr.first.first == init2) {
              auto itr2 = make_pair(make_pair(new_init, itr.first.second), itr.second);
-                if (res_map.find( itr2.first) == res_map.end()) res_map.insert({itr2.first, itr2.second});
+                if (res.find( itr2.first) == res.end()) res.insert({itr2.first, itr2.second});
                 else {
-                   auto tmp_itr = res_map.find(itr2.first);
-                    res_map[tmp_itr->first] = merge_state(itr2.second, tmp_itr->second);
+                   auto tmp_itr = res.find(itr2.first);
+                    res[tmp_itr->first] = merge_state(itr2.second, tmp_itr->second);
                 }
         }
     }
-        return res_map;
+        return res;
 
 }
 set<State> merge_final_states(set<State> src, State  init1, State init2, State new_init) {
-    set<State> res;
-    res.insert(src.begin(), src.end());
+    set<State> res = src;
     for(auto itr :src)
     {
         if(itr == init1 || itr == init2)
         {
             res.insert(new_init);
-          break;
+            return res;
         }
-
     }
     return res;
 }
 
 NFA unification_automat(const NFA &first, const NFA &second) {
-    NFA unit;
-    set_union(begin(first.m_States), end(first.m_States), begin(second.m_States),
-              end(second.m_States), inserter(unit.m_States, begin(unit.m_States)));
-    set_union(begin(first.m_Alphabet), end(first.m_Alphabet), begin(second.m_Alphabet),
-              end(second.m_Alphabet), inserter(unit.m_Alphabet, begin(unit.m_Alphabet)));
-    set_union(begin(first.m_FinalStates), end(first.m_FinalStates), begin(second.m_FinalStates),
-              end(second.m_FinalStates), inserter(unit.m_FinalStates, begin(unit.m_FinalStates)));
-
-    unit.m_Transitions = merged_Transitions(first.m_Transitions, second.m_Transitions);
-    if(first.m_InitialState!=second.m_InitialState)
+    NFA unit = first;
+    map <State, State> changed_states_from_second;
+    //copy second states
+    for(auto itr: second.m_States)
     {
         unit.m_States.insert(*prev(end(unit.m_States))+1);
-        unit.m_InitialState = *prev(end(unit.m_States));
-        unit.m_Transitions= merged_Init_Transitions(unit.m_Transitions, first.m_InitialState, second.m_InitialState, unit.m_InitialState);
-        unit.m_FinalStates = merge_final_states(unit.m_FinalStates, first.m_InitialState, second.m_InitialState, unit.m_InitialState);
-
+        changed_states_from_second.insert(make_pair( itr, *prev(end(unit.m_States))));
     }
-    else unit.m_InitialState = first.m_InitialState;
+    //copy second alphabet
+    unit.m_Alphabet.insert( begin(second.m_Alphabet),end(second.m_Alphabet));
+    //copy second final states
+    for(auto itr: second.m_FinalStates) {
+        auto changed = changed_states_from_second.find(itr);
+        unit.m_FinalStates.insert(changed->second);
+    }
+
+        unit.m_Transitions = merged_start_Transitions(unit, second, changed_states_from_second);
+        unit.m_States.insert(*prev(end(unit.m_States))+1);
+        unit.m_InitialState = *prev(end(unit.m_States));
+        unit.m_Transitions= merged_Init_Transitions(unit.m_Transitions, first.m_InitialState,
+                                                    changed_states_from_second.find(second.m_InitialState)->second, unit.m_InitialState);
+        unit.m_FinalStates = merge_final_states(unit.m_FinalStates, first.m_InitialState, changed_states_from_second.find(second.m_InitialState)->second, unit.m_InitialState);
+
     return unit;
 }
 
@@ -140,12 +140,14 @@ set<State> find_all_achievable_state(State current, const NFA &src, const  set<S
     return res;
 }
 
-NFA delete_unachievable_state(const NFA &src, set<State> achievable_state) {
-    NFA res =src;
+NFA delete_unachievable_state(const NFA src, set<State> achievable_state) {
+    NFA res = src;
+    res.m_States = src.m_States;
     //delete states
-    for(auto itr: res.m_States)
+    for(auto itr = res.m_States.cbegin(); itr!=res.m_States.cend();)
     {
-        if(achievable_state.find(itr) == achievable_state.end()) res.m_States.erase(itr);
+        if(achievable_state.find(*itr) == achievable_state.end()) res.m_States.erase(itr++);
+        else itr++;
     }
     //delete transition
     for(auto itr= res.m_Transitions.cbegin(); itr!=res.m_Transitions.cend();)
@@ -219,15 +221,57 @@ NFA useless_state_remove(NFA src) {
     return all_useful;
 }
 
-NFA determinisation(NFA src) {
-    NFA res = src;
-    for( auto itr : src.m_Transitions)
+map<pair<State, Symbol>, set<State>>  merge_transitions_determ ( const map<pair<State, Symbol>, set<State>>& src,
+                                                           set<State> state_to_copy, State state_num)
+{
+    map <::pair < State, Symbol>, set<State>> res = src;
+    for (auto itr: src) {
+        if(state_to_copy.find(itr.first.first) == state_to_copy.end()) continue;
+
+        if (res.find(make_pair(state_num, itr.first.second)) == res.end()) res.insert({make_pair(state_num, itr.first.second), itr.second});
+        else {
+            auto tmp_itr = res.find(make_pair(state_num, itr.first.second));
+            set<State> tmp_set = merge_state(itr.second, tmp_itr->second);
+            res[tmp_itr->first] = tmp_set;
+        }
+    }
+    return res;
+}
+
+DFA determinisation(NFA src) {
+    DFA res;
+    res.m_States=src.m_States;
+    res.m_Alphabet=src.m_Alphabet;
+    res.m_FinalStates=src.m_FinalStates;
+    res.m_InitialState=src.m_InitialState;
+
+    map<pair<State, Symbol>, set<State>> tmp_transition;
+    tmp_transition.insert(src.m_Transitions.begin(), src.m_Transitions.end());
+   for(auto itr = tmp_transition.begin(); itr!=tmp_transition.end(); itr++)
     {
-        if(itr.second.size()==1) continue;
+
+        if(itr->second.size()==1) continue;
         else
         {
-            map<pair<State, Symbol>, set<State>> tmp_term;
-            res.m_States.insert(*prev(end(res.m_States)));
+            res.m_States.insert(*prev(end(res.m_States))+1);
+            State new_state = *prev(end(res.m_States));
+
+            set<State> tmp_set;
+            tmp_set.insert(new_state);
+
+
+            tmp_transition.insert({itr->first, tmp_set});
+            for(auto itr2 :itr->second)
+            {
+                if(res.m_FinalStates.find(itr2)!=res.m_FinalStates.end())
+                {
+                    res.m_FinalStates.insert(new_state);
+                }
+            }
+            tmp_transition = merge_transitions_determ(tmp_transition, itr->second, new_state);
+            SECONM
+            tmp_transition.erase(itr->first);
+
         }
     }
     return res;
@@ -241,7 +285,7 @@ DFA res;
 tmp = unification_automat(a, b);
 tmp = unachievable_state_remove(tmp);
 tmp = useless_state_remove(tmp);
-tmp = determinisation (tmp);
+res = determinisation (tmp);
     return res;
 }
 
