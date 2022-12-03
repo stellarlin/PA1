@@ -267,7 +267,7 @@ map<pair<State, Symbol>, set<State>>  remove_multistates ( map<pair<State, Symbo
             all_states.erase(itr++);
         }
     }
-    if(all_states.empty())
+    if(multi_states.empty())
     {
         done =1;
         return multi_states;
