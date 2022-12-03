@@ -196,8 +196,6 @@ NFA delete_useless_state(NFA src, set<State> useful_states) {
     for(auto itr= res.m_Transitions.cbegin(); itr!=res.m_Transitions.cend();)
     {
        if(useful_states.find(itr->first.first) == useful_states.end()) res.m_Transitions.erase( itr++);
-    //   else  if(useful_states.find(*itr2) !=useful_states.end()) itr->second.erase(itr2++);
-    //           }
           else   ++itr;
     }
 
@@ -216,15 +214,23 @@ NFA useless_state_remove(NFA src) {
     NFA all_useful=src;
     set<State> useful_state;
     useful_state.insert(src.m_FinalStates.begin(), src.m_FinalStates.end());
-    for( auto itr : src.m_FinalStates)
-    {
-        useful_state = find_all_useful_state(itr, src, useful_state);
-        if(useful_state.size()!=src.m_States.size())delete_useless_state(src, useful_state);
-    }
-  //  auto current_state = src.m_InitialState;
-    //achievable_state = find_all_achievable_state(current_state, src, achievable_state);
-   // all_achievable =  delete_unachievable_state(src, achievable_state);
+    for( auto itr : src.m_FinalStates) useful_state = find_all_useful_state(itr, src, useful_state);
+    if(useful_state.size()!=src.m_States.size())delete_useless_state(src, useful_state);
     return all_useful;
+}
+
+NFA determinisation(NFA src) {
+    NFA res = src;
+    for( auto itr : src.m_Transitions)
+    {
+        if(itr.second.size()==1) continue;
+        else
+        {
+            map<pair<State, Symbol>, set<State>> tmp_term;
+            res.m_States.insert(*prev(end(res.m_States)));
+        }
+    }
+    return res;
 }
 
 DFA unify(const NFA& a, const NFA& b)
@@ -235,6 +241,7 @@ DFA res;
 tmp = unification_automat(a, b);
 tmp = unachievable_state_remove(tmp);
 tmp = useless_state_remove(tmp);
+tmp = determinisation (tmp);
     return res;
 }
 
