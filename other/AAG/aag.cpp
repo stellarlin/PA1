@@ -171,8 +171,8 @@ NFA unachievable_state_remove(const NFA &src)
 }
 
 set<State> find_all_useful_state(unsigned int current_state, NFA src, set<State> current_set) {
-    set<State> res = current_set;
-    if(current_state  == src.m_InitialState)return res;
+    set<State> res;
+    res.insert (current_set.begin(), current_set.end());
     for(auto itr :src.m_Transitions)
     {
         if(current_set.size()==src.m_States.size()) return res;
@@ -216,15 +216,16 @@ NFA useless_state_remove(NFA src) {
     NFA all_useful=src;
     set<State> useful_state;
     useful_state.insert(src.m_FinalStates.begin(), src.m_FinalStates.end());
-    for( auto itr : src.m_FinalStates) useful_state = find_all_useful_state(itr, src, useful_state);
+    for(auto current: src.m_FinalStates) useful_state = find_all_useful_state(current, src, useful_state);
     if(useful_state.size()!=src.m_States.size())delete_useless_state(src, useful_state);
     return all_useful;
 }
 
 map<pair<State, Symbol>, set<State>>  merge_transitions_determ ( const map<pair<State, Symbol>, set<State>>& src,
+                                                                 map<pair<State, Symbol>, set<State>>& multi_states,
                                                            set<State> state_to_copy, State state_num)
 {
-    map <::pair < State, Symbol>, set<State>> res;
+    map <::pair < State, Symbol>, set<State>> res=multi_states;
     for (auto itr: src) {
         if(state_to_copy.find(itr.first.first) == state_to_copy.end()) continue;
 
@@ -238,10 +239,9 @@ map<pair<State, Symbol>, set<State>>  merge_transitions_determ ( const map<pair<
     return res;
 }
 
-map<pair<State, Symbol>, set<State>>  remove_multistates ( map<pair<State, Symbol>, set<State>> multi_states, map<pair<State, Symbol>, set<State>> src, bool & done, DFA automat) {
+map<pair<State, Symbol>, set<State>>  remove_multistates ( map<pair<State, Symbol>, set<State>> multi_states, map<pair<State, Symbol>, set<State>> src, DFA & automat) {
     map<pair<State, Symbol>, set<State>> all_states;
     all_states.insert(src.begin(), src.end());
-    if(done) return all_states;
     for (auto itr =  all_states.cbegin(); itr!= all_states.cend(); ) {
         if (itr->second.size() == 1)
         {
@@ -263,18 +263,14 @@ map<pair<State, Symbol>, set<State>>  remove_multistates ( map<pair<State, Symbo
                     automat.m_FinalStates.insert(new_state);
                 }
             }
-            multi_states = merge_transitions_determ(all_states, itr->second, new_state);
+            multi_states = merge_transitions_determ(all_states, multi_states,itr->second, new_state);
             all_states.erase(itr++);
         }
     }
-    if(multi_states.empty())
-    {
-        done =1;
-        return multi_states;
-    }
+    if(multi_states.empty())return all_states;
     all_states.insert(multi_states.begin(), multi_states.end());
     multi_states.clear();
-    all_states = remove_multistates(multi_states, all_states, done, automat);
+    all_states = remove_multistates(multi_states, all_states, automat);
     return all_states;
 
 }
@@ -287,8 +283,25 @@ DFA determinisation(NFA src) {
 
     map<pair<State, Symbol>, set<State>> tmp_transition, multi_trans;
     tmp_transition.insert(src.m_Transitions.begin(), src.m_Transitions.end());
-    bool done =0;
-    tmp_transition = remove_multistates(multi_trans, tmp_transition, done, res);
+    tmp_transition = remove_multistates(multi_trans, tmp_transition, res);
+
+    for(auto itr : tmp_transition) res.m_Transitions.insert(make_pair(itr.first, *itr.second.begin()));
+    return res;
+}
+
+DFA minimalisation(DFA src) {
+    DFA res = src;
+    set<State> tmp_state;
+    tmp_state.insert(*res.m_FinalStates.begin());
+    for(auto itr : res.m_States)
+    {
+        if(res.m_FinalStates.find(itr) == res.m_FinalStates.end())
+        {
+            tmp_state.insert(itr);
+            break;
+        }
+    }
+
     return res;
 }
 
@@ -301,6 +314,7 @@ tmp = unification_automat(a, b);
 tmp = unachievable_state_remove(tmp);
 tmp = useless_state_remove(tmp);
 res = determinisation (tmp);
+res = minimalisation(res);
     return res;
 }
 
