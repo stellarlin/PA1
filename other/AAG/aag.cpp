@@ -24,7 +24,7 @@
 using namespace std;
 using State = unsigned int;
 using Symbol = uint8_t;
-
+using Table = map<State, pair <State, vector<State>>>;
 struct NFA {
     set<State> m_States;
     set<Symbol> m_Alphabet;
@@ -119,35 +119,43 @@ NFA unification_automat(const NFA &first, const NFA &second) {
     return unit;
 }
 
-set<State> find_all_achievable_state(State current, const NFA &src, const  set<State> & current_set)
+set<State> find_all_achievable_state(State current, const DFA &src, const  set<State> & current_set, unsigned int prev_size)
 {
-   set<State> res =current_set;
-    if(src.m_FinalStates.find(current) != src.m_FinalStates.end() && current!=src.m_InitialState ) return res;
+   set<State> res;
+   res.insert(current_set.begin(), current_set.end());
+ //   if(src.m_FinalStates.find(current) != src.m_FinalStates.end() && current!=src.m_InitialState ) return res;
     for(auto itr :src.m_Transitions)
     {
         if(current_set.size()==src.m_States.size()) return res;
         if(itr.first.first == current)
         {
-            for(auto itr2 : itr.second)
-            {
-                if(itr2==current)continue;
-                res.insert(itr2);
-                res = find_all_achievable_state(itr2, src, res);
-            }
-            }
-        }
+              if(itr.second==current)continue;
+                res.insert(itr.second);
+                if(prev_size==res.size())return res;
+                prev_size=res.size();
+                res = find_all_achievable_state(itr.second, src, res, prev_size);
+                prev_size=res.size();
 
+            }
+    }
     return res;
 }
 
-NFA delete_unachievable_state( NFA src, set<State> achievable_state) {
-    NFA res = src;
+DFA delete_unachievable_state( DFA src, set<State> achievable_state) {
+    DFA res = src;
     //delete states
     for(auto itr = res.m_States.cbegin(); itr!=res.m_States.cend();)
     {
         if(achievable_state.find(*itr) == achievable_state.end()) res.m_States.erase(itr++);
         else itr++;
     }
+
+    for(auto itr = res.m_FinalStates.cbegin(); itr!=res.m_FinalStates.cend();)
+    {
+        if(achievable_state.find(*itr) == achievable_state.end()) res.m_FinalStates.erase(itr++);
+        else itr++;
+    }
+
     //delete transition
     for(auto itr= res.m_Transitions.cbegin(); itr!=res.m_Transitions.cend();)
     {
@@ -157,38 +165,42 @@ NFA delete_unachievable_state( NFA src, set<State> achievable_state) {
     return res;
 }
 
-NFA unachievable_state_remove(NFA src)
+DFA unachievable_state_remove(DFA src)
 {
-   NFA all_achievable;
+   DFA all_achievable;
    set<State> achievable_state;
     achievable_state.insert(src.m_InitialState);
    auto current_state = src.m_InitialState;
-   achievable_state = find_all_achievable_state(current_state, src, achievable_state);
+   achievable_state = find_all_achievable_state(current_state, src, achievable_state, 1);
    if(achievable_state.size()!=src.m_States.size()) all_achievable =  delete_unachievable_state(src, achievable_state);
    else all_achievable=src;
    return all_achievable;
 
 }
 
-set<State> find_all_useful_state(unsigned int current_state, NFA src, set<State> current_set) {
-    set<State> res = current_set;
-    if(current_state  == src.m_InitialState)return res;
+set<State> find_all_useful_state(unsigned int current_state, DFA src, set<State> current_set, unsigned int prev_size) {
+    set<State> res;
+    res.insert(current_set.begin(), current_set.end());
+ //   if(current_state  == src.m_InitialState)return res;
     for(auto itr :src.m_Transitions)
     {
         if(current_set.size()==src.m_States.size()) return res;
-        if(itr.second.find(current_state) !=itr.second.end())
+        if(current_state ==itr.second)
         {
             //if(itr2==current)continue;
                 if(itr.first.first==current_state)continue;
                 res.insert(itr.first.first);
-                res = find_all_useful_state(itr.first.first, src, res);
+                if(prev_size==res.size())return res;
+                else prev_size=res.size();
+                res = find_all_useful_state(itr.first.first, src, res, prev_size);
+                prev_size=res.size();
             }
         }
     return res;
 }
 
-NFA delete_useless_state(NFA  src, set<State> useful_states) {
-    NFA res =src;
+DFA delete_useless_state(DFA  src, set<State> useful_states) {
+    DFA res =src;
     //delete states
     for(auto itr: res.m_States)
     {
@@ -197,26 +209,20 @@ NFA delete_useless_state(NFA  src, set<State> useful_states) {
     //delete transition
     for(auto itr= res.m_Transitions.cbegin(); itr!=res.m_Transitions.cend();)
     {
-       if(useful_states.find(itr->first.first) == useful_states.end()) res.m_Transitions.erase( itr++);
+       if(useful_states.find(itr->first.first) == useful_states.end()
+       || useful_states.find(itr->second) ==useful_states.end()) res.m_Transitions.erase( itr++);
           else   ++itr;
     }
 
-    for(auto itr : res.m_Transitions)
-    {
-        for(auto itr2 : itr.second)
-        {
-            if(useful_states.find(itr2) !=useful_states.end()) itr.second.erase(itr2);
-        }
-    }
     return res;
 
 }
 
-NFA useless_state_remove(NFA src) {
-    NFA all_useful;
+DFA useless_state_remove(DFA src) {
+    DFA all_useful;
     set<State> useful_state;
     useful_state.insert(src.m_FinalStates.begin(), src.m_FinalStates.end());
-    for( auto itr : src.m_FinalStates) useful_state = find_all_useful_state(itr, src, useful_state);
+    for( auto itr : src.m_FinalStates) useful_state = find_all_useful_state(itr, src, useful_state, useful_state.size());
     if(useful_state.size()!=src.m_States.size()) all_useful=delete_useless_state(src, useful_state);
     else all_useful=src;
     return all_useful;
@@ -226,13 +232,15 @@ map<pair<State, Symbol>, set<State>>  merge_transitions_determ ( const map<pair<
                                                                  const map<pair<State, Symbol>, set<State>>& multi_states,
                                                            set<State> state_to_copy, State state_num)
 {
-    map <::pair < State, Symbol>, set<State>> res = multi_states;
+    map <::pair < State, Symbol>, set<State>> res;
+    res.insert(multi_states.begin(),multi_states.end());
+
     for (auto itr: src) {
         if(state_to_copy.find(itr.first.first) == state_to_copy.end()) continue;
 
-        if (src.find(make_pair(state_num, itr.first.second)) == src.end()) res.insert({make_pair(state_num, itr.first.second), itr.second});
+        if (res.find(make_pair(state_num, itr.first.second)) == res.end()) res.insert({make_pair(state_num, itr.first.second), itr.second});
         else {
-            auto tmp_itr = src.find(make_pair(state_num, itr.first.second));
+            auto tmp_itr = res.find(make_pair(state_num, itr.first.second));
             set<State> tmp_set = merge_state(itr.second, tmp_itr->second);
             res[tmp_itr->first] = tmp_set;
         }
@@ -241,33 +249,48 @@ map<pair<State, Symbol>, set<State>>  merge_transitions_determ ( const map<pair<
 }
 
 map<pair<State, Symbol>, set<State>>  remove_multistates ( map<pair<State, Symbol>, set<State>> multi_states,
-                                                           map<pair<State, Symbol>, set<State>> src, bool & done, DFA & automat) {
+                                                           map<pair<State, Symbol>, set<State>> src, bool & done, DFA & automat, map <State, set<State>>& state_consist) {
     map<pair<State, Symbol>, set<State>> all_states;
     all_states.insert(src.begin(), src.end());
     if(done) return all_states;
-    for (auto itr =  all_states.cbegin(); itr!= all_states.cend(); ) {
-        if (itr->second.size() == 1)
-        {
-            ++itr;
-            continue;
-        }
+    for (auto itr: all_states ) {
+        if (itr.second.size() == 1) continue;
         else {
-            automat.m_States.insert(*prev(end(automat.m_States)) + 1);
-            State new_state = *prev(end(automat.m_States));
-            if(automat.m_FinalStates.find(itr->first.first) != automat.m_FinalStates.end()) automat.m_FinalStates.insert(new_state);
-            set<State> tmp_set;
-            tmp_set.insert(new_state);
-
-
-            multi_states.insert({itr->first, tmp_set});
-            tmp_set.clear();
-            for (auto itr2: itr->second) {
-                if (automat.m_FinalStates.find(itr2) != automat.m_FinalStates.end()) {
-                    automat.m_FinalStates.insert(new_state);
+            bool was_in_prev = 0;
+            set<State> tmp_set_consist;
+            State new_state = *prev(end(automat.m_States))+1;
+            for(auto itr2 : itr.second)
+            {
+                if(state_consist.find(itr2) ==state_consist.end()) tmp_set_consist.insert(itr2);
+                else tmp_set_consist.insert(state_consist.find(itr2)->second.begin(), state_consist.find(itr2)->second.end());
+            }
+            for( auto itr2 : state_consist)
+            {
+                if(tmp_set_consist == itr2.second)
+                {
+                    was_in_prev = 1;
+                    new_state=itr2.first;
+                    break;
                 }
             }
-            multi_states = merge_transitions_determ(all_states, multi_states,itr->second, new_state);
-            all_states.erase(itr++);
+
+            set<State> tmp_set;
+            tmp_set.insert(new_state);
+            multi_states.insert({itr.first, tmp_set});
+            tmp_set.clear();
+
+            if(!was_in_prev) {
+                automat.m_States.insert(*prev(end(automat.m_States)) + 1);
+                state_consist.insert({new_state, tmp_set_consist});
+
+                for (auto itr2: itr.second) {
+                    if (automat.m_FinalStates.find(itr2) != automat.m_FinalStates.end())
+                        automat.m_FinalStates.insert(new_state);
+                }
+
+                multi_states = merge_transitions_determ(all_states, multi_states, itr.second, new_state);
+            }
+           // all_states.erase(itr++);
         }
     }
     if(multi_states.empty())
@@ -275,9 +298,13 @@ map<pair<State, Symbol>, set<State>>  remove_multistates ( map<pair<State, Symbo
         done =1;
         return all_states;
     }
-    all_states.insert(multi_states.begin(), multi_states.end());
+
+    for(auto itr : multi_states) {
+        all_states[itr.first] = itr.second;
+    }
+
     multi_states.clear();
-    all_states = remove_multistates(multi_states, all_states, done, automat);
+    all_states = remove_multistates(multi_states, all_states, done, automat, state_consist);
     return all_states;
 
 }
@@ -288,10 +315,11 @@ DFA determinisation(NFA src) {
     res.m_FinalStates=src.m_FinalStates;
     res.m_InitialState=src.m_InitialState;
 
+    map <State, set<State>> state_consist;
     map<pair<State, Symbol>, set<State>> tmp_transition, multi_trans;
     tmp_transition.insert(src.m_Transitions.begin(), src.m_Transitions.end());
     bool done =0;
-    tmp_transition = remove_multistates(multi_trans, tmp_transition, done, res);
+    tmp_transition = remove_multistates(multi_trans, tmp_transition, done, res, state_consist);
     for(auto itr : tmp_transition) res.m_Transitions.insert(make_pair(itr.first, *itr.second.begin()));
     return res;
 }
@@ -309,13 +337,99 @@ State find_first_not_final_state (DFA src )
     }
     return not_Final;
 }
+
+Table create_minim_table ( DFA  src, map <State, State> &renamed, const  map <Symbol, unsigned int> symbol_idx, const unsigned int count_of_symbol )
+{
+    Table res;
+
+    State e = *prev(end(src.m_States))+1;
+    unsigned int changed_counter = 0;
+    for(auto itr: renamed)
+    {
+        vector<State> tmp_vector;
+        tmp_vector.reserve(count_of_symbol);
+        for(int i = 0; i<count_of_symbol;i++) tmp_vector.insert(tmp_vector.begin()+ i, e);
+        for(auto itr2 : src.m_Transitions)
+        {
+            if(itr2.first.first == itr.first)   tmp_vector[symbol_idx.find(itr2.first.second)->second] = renamed.find(itr2.second)->second;
+        }
+        res.insert({itr.first, {itr.second, tmp_vector}});
+        tmp_vector.clear();
+    }
+
+
+    for(auto current = res.begin(); current!=res.end(); current++) {
+        bool changed = 0;
+        for (auto itr = res.begin(); itr != current; itr++) {
+            if ((current->second.first == itr->second.first
+                 && current->second.second == itr->second.second
+                 && current != res.begin()))
+            {
+                if(renamed.find(current->first)->second != renamed.find(itr->first)->second) renamed[current->first] = renamed.find(itr->first)->second, changed_counter++;
+                changed = 1;
+                break;
+            }
+        }
+        if(changed ==0)
+        {
+            if(renamed.find(current->first)->second != renamed.find(current->first)->first )renamed[current->first] = current->first, changed_counter++;
+        }
+    }
+    if(changed_counter!=0) res = create_minim_table(src, renamed, symbol_idx, count_of_symbol);
+    return res;
+
+}
+
+set<State> find_states_to_delete( map <State, State> renamed)
+{
+    set<State> ToDelete;
+    for(auto current = renamed.begin(); current!=renamed.end(); current++) {
+        {
+            for (auto itr = renamed.begin(); itr != current; itr++) {
+                if ((current->second == itr->second && current != renamed.begin())) {
+                    ToDelete.insert(current->first);
+                }
+            }
+        }
+    }
+    return ToDelete;
+}
+DFA delete_repeated_states(Table src_table, map <State, State> renamed,  DFA src_automat,  map <Symbol, unsigned int> symbol_idx) {
+
+    DFA res;
+    set<State> states_to_delete;
+    states_to_delete = find_states_to_delete(renamed);
+    res.m_InitialState=src_automat.m_InitialState;
+    res.m_Alphabet.insert(src_automat.m_Alphabet.begin(), src_automat.m_Alphabet.end());
+    for(auto itr : src_automat.m_States)
+    {
+        if(states_to_delete.find(itr)== states_to_delete.end()) res.m_States.insert(itr);
+    }
+
+    for(auto itr : src_automat.m_FinalStates)
+    {
+        if(states_to_delete.find(itr)== states_to_delete.end()) res.m_FinalStates.insert(itr);
+    }
+
+    for(auto itr : src_automat.m_Transitions)
+    {
+        if(states_to_delete.find(itr.first.first) == states_to_delete.end())
+        {
+            State next_state = src_table.find(itr.first.first)->second.second[symbol_idx.find(itr.first.second)->second];
+            res.m_Transitions.insert({itr.first, next_state});
+            }
+        }
+
+
+
+    return res;
+}
 DFA minimization(DFA src) {
      DFA res;
-     int count_of_symbol =  src.m_Alphabet.size();
-    map<State, pair <State, vector<State>>> minimization_Table;
+     unsigned int count_of_symbol =  src.m_Alphabet.size();
+   Table minimization_Table;
     map <State, State> renamed;
     map <Symbol, unsigned int> symbol_idx;
-    State e = *prev(end(src.m_States))+1;
 
     int idx = 0;
     for(auto itr : src.m_Alphabet) symbol_idx.insert({itr, idx}), idx++;
@@ -329,28 +443,9 @@ DFA minimization(DFA src) {
     }
 
 
-    for(auto itr: renamed)
-    {
-        vector<State> tmp_vector;
-        tmp_vector.reserve(count_of_symbol);
-        for(int i = 0; i<count_of_symbol;i++) tmp_vector.insert(tmp_vector.begin()+ i, e);
-        for(auto itr2 : src.m_Transitions)
-        {
-            if(itr2.first.first == itr.first)   tmp_vector[symbol_idx.find(itr2.first.second)->second] = renamed.find(itr2.second)->second;
-        }
-        minimization_Table.insert({itr.first, {itr.second, tmp_vector}});
-        tmp_vector.clear();
-    }
-
-    for(auto current = minimization_Table.begin(); current!=prev(end(minimization_Table)); current++) {
-        for (auto itr = current; itr != minimization_Table.begin(); itr++) {
-            if ((current->second.first == itr->second.first && current->second.second == itr->second.second) ||current==minimization_Table.begin()) {
-                renamed[current->first] = itr->first;
-                break;
-            }
-        }
-    }
-     return res;
+    minimization_Table =  create_minim_table(src, renamed, symbol_idx, count_of_symbol);
+    res = delete_repeated_states(minimization_Table, renamed, src, symbol_idx);
+    return res;
 }
 
 DFA unify(const NFA& a, const NFA& b)
@@ -359,9 +454,9 @@ NFA tmp;
 DFA res;
 
 tmp = unification_automat(a, b);
-tmp = unachievable_state_remove(tmp);
-tmp = useless_state_remove(tmp);
 res = determinisation (tmp);
+res = unachievable_state_remove(res);
+res = useless_state_remove(res);
 res = minimization(res);
 
     return res;
@@ -445,32 +540,32 @@ int main()
                     {{4, 'a'}, {4}},
                     {{4, 'b'}, {4}},
             },
-            1,//0
+            0,//0
             {4},
     };
     DFA b{
-            {0, 1, 2, 3, 4, 5, 6, 7, 8},
+            {10, 1, 12, 14, 2, 13, 15, 11, 16},
             {'a', 'b'},
             {
-                    {{0, 'a'}, {1}},
-                    {{0, 'b'}, {2}},
-                    {{2, 'a'}, {3}},
-                    {{2, 'b'}, {4}},
-                    {{3, 'a'}, {5}},
-                    {{3, 'b'}, {6}},
-                    {{4, 'a'}, {7}},
-                    {{4, 'b'}, {4}},
-                    {{5, 'a'}, {5}},
-                    {{5, 'b'}, {4}},
-                    {{6, 'a'}, {8}},
-                    {{6, 'b'}, {4}},
-                    {{7, 'a'}, {5}},
-                    {{7, 'b'}, {4}},
-                    {{8, 'a'}, {8}},
-                    {{8, 'b'}, {8}},
+                    {{10, 'a'}, {1}},
+                    {{10, 'b'}, {12}},
+                    {{12, 'a'}, {14}},
+                    {{12, 'b'}, {2}},
+                    {{14, 'a'}, {13}},
+                    {{14, 'b'}, {15}},
+                    {{2, 'a'}, {11}},
+                    {{2, 'b'}, {2}},
+                    {{13, 'a'}, {13}},
+                    {{13, 'b'}, {2}},
+                    {{15, 'a'}, {16}},
+                    {{15, 'b'}, {2}},
+                    {{11, 'a'}, {13}},
+                    {{11, 'b'}, {2}},
+                    {{16, 'a'}, {16}},
+                    {{16, 'b'}, {16}},
             },
-            0,
-            {1, 5, 8},
+            10,
+            {1, 13, 16},
     };
     assert(unify(b1, b2) == b);
 
