@@ -56,13 +56,15 @@ set<State> merge_state ( set<State>& set1,  set<State> set2)
                set2.begin(), set2.end(), inserter(res_state, res_state.begin()));
     return res_state;
 }
-map<pair<State, Symbol>, set<State>>  merged_start_Transitions ( NFA src,  NFA second_automat,  map <State, State> changed_states) {
+map<pair<State, Symbol>, set<State>>  merged_start_Transitions ( NFA src,  NFA second_automat,  map <State, State> changed_states, set<Symbol> alpha_inters, bool particular) {
     map<pair<State, Symbol>, set<State>> res;
     res.insert(src.m_Transitions.begin(), src.m_Transitions.end());
     for (auto itr:  second_automat.m_Transitions) {
         set<State> changed_set;
-        for (auto itr2: itr.second) changed_set.insert(changed_states.find(itr2)->second);
-        res.insert({{changed_states.find(itr.first.first)->second, itr.first.second}, changed_set});
+        if(alpha_inters.find(itr.first.second)!= alpha_inters.end()) {
+            for (auto itr2: itr.second) changed_set.insert(changed_states.find(itr2)->second);
+            res.insert({{changed_states.find(itr.first.first)->second, itr.first.second}, changed_set});
+        }
     }
     return res;
 
@@ -98,28 +100,47 @@ set<State> merge_final_states(set<State> src, State  init1, State init2, State n
 
 //start
 NFA unification_automat(const NFA &first, const NFA &second, const bool MODE,  map <State, pair<State, State>> & final_inter_state) {
-    NFA unit = first;
+    NFA unit;
     map <State, State> changed_states_from_second;
+    set<Symbol> alpha_inters;
+  bool particulary_transition = 0;
 
     //copy second states
+    unit.m_States.insert(first.m_States.begin(), first.m_States.end());
     for(auto itr: second.m_States)
     {
         unit.m_States.insert(*prev(end(unit.m_States))+1);
         changed_states_from_second.insert(make_pair( itr, *prev(end(unit.m_States))));
     }
     //copy second alphabet
+    unit.m_Alphabet.insert(first.m_Alphabet.begin(), first.m_Alphabet.end());
     unit.m_Alphabet.insert( begin(second.m_Alphabet),end(second.m_Alphabet));
 
 
+    if (first.m_Alphabet!=second.m_Alphabet && MODE ==INTERSECT) {
+        set_intersection(first.m_Alphabet.begin(), first.m_Alphabet.end(),
+                         second.m_Alphabet.begin(), second.m_Alphabet.end(),
+                         inserter(alpha_inters, alpha_inters.begin()));
+        particulary_transition = 1;
+        for(auto itr : first.m_Transitions)
+        {
+            if(alpha_inters.find(itr.first.second)!= alpha_inters.end())
+            {
+                unit.m_Transitions.insert(itr);
+            }
+        }
 
-        unit.m_Transitions = merged_start_Transitions(unit, second, changed_states_from_second);
+    }
+    else   unit.m_Transitions.insert(first.m_Transitions.begin(), first.m_Transitions.end());
+
+        unit.m_Transitions = merged_start_Transitions(unit, second, changed_states_from_second, alpha_inters, particulary_transition);
         unit.m_States.insert(*prev(end(unit.m_States))+1);
         unit.m_InitialState = *prev(end(unit.m_States));
         unit.m_Transitions= merged_Init_Transitions(unit.m_Transitions, first.m_InitialState,
                                                     changed_states_from_second.find(second.m_InitialState)->second, unit.m_InitialState);
 
 
-
+        unit.m_FinalStates.insert(first.m_FinalStates.begin(), first.m_FinalStates.end());
         //copy second final states
         for (auto itr: second.m_FinalStates) {
             auto changed = changed_states_from_second.find(itr);
@@ -156,7 +177,7 @@ set<State> find_all_achievable_state(State current, const DFA &src, const  set<S
         {
               if(itr.second==current)continue;
                 res.insert(itr.second);
-                if(prev_size==res.size())return res;
+                if(prev_size==res.size())continue;
                 prev_size=res.size();
                 res = find_all_achievable_state(itr.second, src, res, prev_size);
                 prev_size=res.size();
@@ -216,7 +237,7 @@ set<State> find_all_useful_state(unsigned int current_state, DFA src, set<State>
             //if(itr2==current)continue;
                 if(itr.first.first==current_state)continue;
                 res.insert(itr.first.first);
-                if(prev_size==res.size())return res;
+                if(prev_size==res.size())continue;
                 else prev_size=res.size();
                 res = find_all_useful_state(itr.first.first, src, res, prev_size);
                 prev_size=res.size();
@@ -376,12 +397,12 @@ State find_first_not_final_state (DFA src )
         if(src.m_FinalStates.find(itr) == src.m_FinalStates.end())
         {
             not_Final = itr;
-            break;
+            return not_Final;
         }
     }
-    return not_Final;
+    return *prev(end(src.m_States))+1;
 }
-Table create_minim_table ( DFA  src, map <State, State> &renamed, const  map <Symbol, unsigned int> symbol_idx, const unsigned int count_of_symbol )
+Table create_minim_table ( DFA  src, map <State, State> &renamed, const  map <Symbol, unsigned int> symbol_idx,  unsigned int count_of_symbol )
 {
     Table res;
 
@@ -391,7 +412,7 @@ Table create_minim_table ( DFA  src, map <State, State> &renamed, const  map <Sy
     {
         vector<State> tmp_vector;
         tmp_vector.reserve(count_of_symbol);
-        for(int i = 0; i<count_of_symbol;i++) tmp_vector.insert(tmp_vector.begin()+ i, e);
+        for(unsigned int i = 0; i<count_of_symbol;i++) tmp_vector.insert(tmp_vector.begin()+ i, e);
         for(auto itr2 : src.m_Transitions)
         {
             if(itr2.first.first == itr.first)   tmp_vector[symbol_idx.find(itr2.first.second)->second] = renamed.find(itr2.second)->second;
@@ -670,7 +691,7 @@ int main()
             8,
             {},
     };
-   assert(intersect(c1, c2) == c);
+  // assert(intersect(c1, c2) == c);
 
     NFA d1{
             {0, 1, 2, 3},
@@ -716,6 +737,6 @@ int main()
             0,
             {1, 2, 3},
     };
- //  assert(intersect(d1, d2) == d);
+  assert(intersect(d1, d2) == d);
 }
 #endif
