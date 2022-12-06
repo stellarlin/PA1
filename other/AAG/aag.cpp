@@ -24,6 +24,10 @@
 using namespace std;
 using State = unsigned int;
 using Symbol = uint8_t;
+
+#define UNIFY  true
+#define INTERSECT  false
+
 using Table = map<State, pair <State, vector<State>>>;
 struct NFA {
     set<State> m_States;
@@ -50,11 +54,9 @@ set<State> merge_state ( set<State>& set1,  set<State> set2)
                set2.begin(), set2.end(), inserter(res_state, res_state.begin()));
     return res_state;
 }
-
-
 map<pair<State, Symbol>, set<State>>  merged_start_Transitions ( NFA src,  NFA second_automat,  map <State, State> changed_states) {
     map<pair<State, Symbol>, set<State>> res;
-    res = src.m_Transitions;
+    res.insert(src.m_Transitions.begin(), src.m_Transitions.end());
     for (auto itr:  second_automat.m_Transitions) {
         set<State> changed_set;
         for (auto itr2: itr.second) changed_set.insert(changed_states.find(itr2)->second);
@@ -92,9 +94,10 @@ set<State> merge_final_states(set<State> src, State  init1, State init2, State n
     return res;
 }
 
-NFA unification_automat(const NFA &first, const NFA &second) {
+NFA unification_automat(const NFA &first, const NFA &second, const bool MODE,  map <State, pair<State, State>> & final_inter_state) {
     NFA unit = first;
     map <State, State> changed_states_from_second;
+
     //copy second states
     for(auto itr: second.m_States)
     {
@@ -103,18 +106,36 @@ NFA unification_automat(const NFA &first, const NFA &second) {
     }
     //copy second alphabet
     unit.m_Alphabet.insert( begin(second.m_Alphabet),end(second.m_Alphabet));
-    //copy second final states
-    for(auto itr: second.m_FinalStates) {
-        auto changed = changed_states_from_second.find(itr);
-        unit.m_FinalStates.insert(changed->second);
-    }
+
+
 
         unit.m_Transitions = merged_start_Transitions(unit, second, changed_states_from_second);
         unit.m_States.insert(*prev(end(unit.m_States))+1);
         unit.m_InitialState = *prev(end(unit.m_States));
         unit.m_Transitions= merged_Init_Transitions(unit.m_Transitions, first.m_InitialState,
                                                     changed_states_from_second.find(second.m_InitialState)->second, unit.m_InitialState);
+
+
+
+        //copy second final states
+        for (auto itr: second.m_FinalStates) {
+            auto changed = changed_states_from_second.find(itr);
+            unit.m_FinalStates.insert(changed->second);
+        }
         unit.m_FinalStates = merge_final_states(unit.m_FinalStates, first.m_InitialState, changed_states_from_second.find(second.m_InitialState)->second, unit.m_InitialState);
+
+    if (MODE == INTERSECT)
+    {
+        State idx = 0;
+        for(auto itr = unit.m_FinalStates.begin(); itr != prev(unit.m_FinalStates.end()); itr++)
+        {
+            for (auto itr2 = next(itr); itr2!= unit.m_FinalStates.end(); itr2++)
+            {
+                final_inter_state.insert({idx, {*itr, *itr2}});
+                idx++;
+            }
+        }
+    }
 
     return unit;
 }
@@ -248,11 +269,31 @@ map<pair<State, Symbol>, set<State>>  merge_transitions_determ ( const map<pair<
     return res;
 }
 
-map<pair<State, Symbol>, set<State>>  remove_multistates ( map<pair<State, Symbol>, set<State>> multi_states,
-                                                           map<pair<State, Symbol>, set<State>> src, bool & done, DFA & automat, map <State, set<State>>& state_consist) {
+
+void find_final_pair(State new_state, map<State, pair<State, State>> & final_pair, set<State> next_state_set, DFA &automat) {
+
+    State new_idx = prev(final_pair.end())->first + 1;
+    for (auto itr: next_state_set) {
+        for (auto itr2: final_pair) {
+            if ((itr2.second.first == itr && next_state_set.find(itr2.second.second) != next_state_set.end()) ||
+                (itr2.second.second == itr && next_state_set.find(itr2.second.first) != next_state_set.end())) {
+                for (auto itr3: automat.m_FinalStates) {
+                    final_pair.insert({new_idx, {new_state, itr3}});
+                    new_idx++;
+                }
+                automat.m_FinalStates.insert(new_state);
+                return;
+            }
+        }
+    }
+}
+
+map<pair<State, Symbol>, set<State>>  remove_multistates (map<pair<State, Symbol>, set<State>> multi_states,
+                                                          map<pair<State, Symbol>, set<State>> src,
+                                                          map <State, pair<State, State>> & final_inter_state, const bool MODE,
+                                                          DFA & automat, map <State, set<State>>& state_consist) {
     map<pair<State, Symbol>, set<State>> all_states;
     all_states.insert(src.begin(), src.end());
-    if(done) return all_states;
     for (auto itr: all_states ) {
         if (itr.second.size() == 1) continue;
         else {
@@ -283,32 +324,31 @@ map<pair<State, Symbol>, set<State>>  remove_multistates ( map<pair<State, Symbo
                 automat.m_States.insert(*prev(end(automat.m_States)) + 1);
                 state_consist.insert({new_state, tmp_set_consist});
 
-                for (auto itr2: itr.second) {
-                    if (automat.m_FinalStates.find(itr2) != automat.m_FinalStates.end())
-                        automat.m_FinalStates.insert(new_state);
+                if(MODE ==UNIFY) {
+                    for (auto itr2: itr.second) {
+                        if (automat.m_FinalStates.find(itr2) != automat.m_FinalStates.end())
+                            automat.m_FinalStates.insert(new_state);
+                    }
                 }
-
+                else if (MODE == INTERSECT) find_final_pair(new_state, final_inter_state, itr.second, automat);
                 multi_states = merge_transitions_determ(all_states, multi_states, itr.second, new_state);
             }
            // all_states.erase(itr++);
         }
     }
-    if(multi_states.empty())
-    {
-        done =1;
-        return all_states;
-    }
+    if(multi_states.empty()) return all_states;
+
 
     for(auto itr : multi_states) {
         all_states[itr.first] = itr.second;
     }
 
     multi_states.clear();
-    all_states = remove_multistates(multi_states, all_states, done, automat, state_consist);
+    all_states = remove_multistates(multi_states, all_states, final_inter_state, MODE, automat, state_consist);
     return all_states;
 
 }
-DFA determinisation(NFA src) {
+DFA determinisation(NFA src, map <State, pair<State, State>> final_inter_state, const bool MODE) {
     DFA res;
     res.m_States=src.m_States;
     res.m_Alphabet=src.m_Alphabet;
@@ -318,8 +358,7 @@ DFA determinisation(NFA src) {
     map <State, set<State>> state_consist;
     map<pair<State, Symbol>, set<State>> tmp_transition, multi_trans;
     tmp_transition.insert(src.m_Transitions.begin(), src.m_Transitions.end());
-    bool done =0;
-    tmp_transition = remove_multistates(multi_trans, tmp_transition, done, res, state_consist);
+    tmp_transition = remove_multistates(multi_trans, tmp_transition, final_inter_state, MODE, res, state_consist);
     for(auto itr : tmp_transition) res.m_Transitions.insert(make_pair(itr.first, *itr.second.begin()));
     return res;
 }
@@ -452,9 +491,11 @@ DFA unify(const NFA& a, const NFA& b)
 {
 NFA tmp;
 DFA res;
+bool MODE = UNIFY;
+map <State, pair<State, State>> final_inter_state;
 
-tmp = unification_automat(a, b);
-res = determinisation (tmp);
+tmp = unification_automat(a, b, MODE, final_inter_state);
+res = determinisation (tmp, final_inter_state, MODE);
 res = unachievable_state_remove(res);
 res = useless_state_remove(res);
 res = minimization(res);
@@ -462,7 +503,24 @@ res = minimization(res);
     return res;
 }
 
-//DFA intersect(const NFA& a, const NFA& b);
+
+
+DFA intersect(const NFA& a, const NFA& b)
+{
+    NFA tmp;
+    DFA res;
+    bool MODE = INTERSECT;
+    map <State, pair<State, State>> final_inter_state;
+
+    tmp = tmp = unification_automat(a, b, MODE, final_inter_state);
+    res = determinisation (tmp, final_inter_state, MODE);
+    res = unachievable_state_remove(res);
+    res = useless_state_remove(res);
+    res = minimization(res);
+
+    return res;
+
+}
 
 #ifndef __PROGTEST__
 
@@ -514,7 +572,7 @@ int main()
             {2},
     };
 
-    //assert(intersect(a1, a2) == a);
+    assert(intersect(a1, a2) == a);
 
     NFA b1{
             {0, 1, 2, 3, 4},
