@@ -11,6 +11,25 @@ typedef struct TItem
     char m_Secret[24];
 } TITEM;
 
+int cmpName ( const TITEM * a,
+              const TITEM * b )
+{
+    return strcmp ( a -> m_Name, b -> m_Name );
+}
+
+int cmpNameInsensitive ( const TITEM * a,
+                         const TITEM * b )
+{
+    return strcasecmp ( a -> m_Name, b -> m_Name );
+}
+
+int cmpNameLen ( const TITEM * a,
+                 const TITEM * b )
+{
+    size_t la = strlen ( a -> m_Name ), lb = strlen ( b -> m_Name );
+    return ( lb < la ) - ( la < lb );
+}
+
 #endif /* __PROGTEST__ */
 
 #define ASC 1
@@ -43,8 +62,8 @@ TITEM * newItem ( const char * name, TITEM * next )
 }
 
 
-bool name_compare(const char *name1, const char *name2, bool type) {
-    return type == ASC ?  strcmp(name1, name2)>0 : strcmp(name1, name2)<0;
+bool name_compare(TITEM * firstIT, TITEM * secondIT,  bool type, int (* cmpFn) ( const TITEM *, const TITEM *)) {
+    return type == ASC ?  cmpFn(firstIT, secondIT) > 0 : cmpFn(firstIT, secondIT) < 0;
 }
 
 void swap_item(TITEM *firstIT, TItem *secondIT) {
@@ -54,7 +73,7 @@ void swap_item(TITEM *firstIT, TItem *secondIT) {
 }
 
 
-TITEM * sortList ( TITEM * l,  int ascending )
+TITEM * sortListCmp  ( TITEM* l, int ascending, int (* cmpFn) ( const TITEM *, const TITEM *) )
 {
     bool type;
     if (ascending==0) type = DESC;
@@ -74,7 +93,7 @@ TITEM * sortList ( TITEM * l,  int ascending )
         while (start->m_Next!=end)
         {
 
-            if( name_compare(start->m_Name, start->m_Next->m_Name, type)) {
+            if( name_compare(start, start->m_Next, type, cmpFn)) {
                 swap_item(start, start->m_Next);
                 swapped = 1;
             }
@@ -100,151 +119,186 @@ void freeList     ( TITEM * src )
 #ifndef __PROGTEST__
 int main ( int argc, char * argv [] )
 {
+
     TITEM * l;
     char tmp[50];
 
     assert ( sizeof ( TITEM ) == sizeof ( TITEM * ) + sizeof ( char * ) + 24 * sizeof ( char ) );
     l = NULL;
-    l = newItem ( "PA1", l );
-    l = newItem ( "PA2", l );
-    l = newItem ( "UOS", l );
-    l = newItem ( "LIN", l );
+    l = newItem ( "BI-PA1", l );
+    l = newItem ( "BIE-PA2", l );
+    l = newItem ( "NI-PAR", l );
+    l = newItem ( "lin", l );
     l = newItem ( "AG1", l );
     assert ( l
              && ! strcmp ( l -> m_Name, "AG1" ) );
     assert ( l -> m_Next
-             && ! strcmp ( l -> m_Next -> m_Name, "LIN" ) );
+             && ! strcmp ( l -> m_Next -> m_Name, "lin" ) );
     assert ( l -> m_Next -> m_Next
-             && ! strcmp ( l -> m_Next -> m_Next -> m_Name, "UOS" ) );
+             && ! strcmp ( l -> m_Next -> m_Next -> m_Name, "NI-PAR" ) );
     assert ( l -> m_Next -> m_Next -> m_Next
-             && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Name, "PA2" ) );
+             && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Name, "BIE-PA2" ) );
     assert ( l -> m_Next -> m_Next -> m_Next -> m_Next
-             && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "PA1" ) );
+             && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "BI-PA1" ) );
     assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next == NULL );
-
-       l = sortList ( l, 1 );
+    l = sortListCmp ( l, 1, cmpName );
     assert ( l
-                && ! strcmp ( l -> m_Name, "AG1" ) );
-       assert ( l -> m_Next
-                && ! strcmp ( l -> m_Next -> m_Name, "LIN" ) );
-       assert ( l -> m_Next -> m_Next
-                && ! strcmp ( l -> m_Next -> m_Next -> m_Name, "PA1" ) );
-       assert ( l -> m_Next -> m_Next -> m_Next
-                && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Name, "PA2" ) );
-       assert ( l -> m_Next -> m_Next -> m_Next -> m_Next
-                && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "UOS" ) );
-       assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next == NULL );
-       l = newItem ( "programming and algorithmic I", l );
-       l = newItem ( "AAG", l );
-       assert ( l
-                && ! strcmp ( l -> m_Name, "AAG" ) );
-       assert ( l -> m_Next
-                && ! strcmp ( l -> m_Next -> m_Name, "programming and algorithmic I" ) );
-       assert ( l -> m_Next -> m_Next
-                && ! strcmp ( l -> m_Next -> m_Next -> m_Name, "AG1" ) );
-       assert ( l -> m_Next -> m_Next -> m_Next
-                && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Name, "LIN" ) );
-       assert ( l -> m_Next -> m_Next -> m_Next -> m_Next
-                && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "PA1" ) );
-       assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next
-                && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "PA2" ) );
-       assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next
-                && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "UOS" ) );
-       assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next == NULL );
-       l = sortList ( l, 0 );
-       assert ( l
-                && ! strcmp ( l -> m_Name, "programming and algorithmic I" ) );
-       assert ( l -> m_Next
-                && ! strcmp ( l -> m_Next -> m_Name, "UOS" ) );
-       assert ( l -> m_Next -> m_Next
-                && ! strcmp ( l -> m_Next -> m_Next -> m_Name, "PA2" ) );
-       assert ( l -> m_Next -> m_Next -> m_Next
-                && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Name, "PA1" ) );
-       assert ( l -> m_Next -> m_Next -> m_Next -> m_Next
-                && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "LIN" ) );
-       assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next
-                && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "AG1" ) );
-       assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next
-                && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "AAG" ) );
-       assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next == NULL );
-       freeList ( l );
-       l = NULL;
-       strncpy ( tmp, "PA1", sizeof ( tmp ) - 1 );
-       tmp[sizeof ( tmp ) - 1 ] = '\0';
-       l = newItem ( tmp, l );
-       strncpy ( tmp, "PA2", sizeof ( tmp ) - 1 );
-       tmp[sizeof ( tmp ) - 1 ] = '\0';
-       l = newItem ( tmp, l );
-       strncpy ( tmp, "UOS", sizeof ( tmp ) - 1 );
-       tmp[sizeof ( tmp ) - 1 ] = '\0';
-       l = newItem ( tmp, l );
-       strncpy ( tmp, "LIN", sizeof ( tmp ) - 1 );
-       tmp[sizeof ( tmp ) - 1 ] = '\0';
-       l = newItem ( tmp, l );
-       strncpy ( tmp, "AG1", sizeof ( tmp ) - 1 );
-       tmp[sizeof ( tmp ) - 1 ] = '\0';
-       l = newItem ( tmp, l );
-       assert ( l
-                && ! strcmp ( l -> m_Name, "AG1" ) );
-       assert ( l -> m_Next
-                && ! strcmp ( l -> m_Next -> m_Name, "LIN" ) );
-       assert ( l -> m_Next -> m_Next
-                && ! strcmp ( l -> m_Next -> m_Next -> m_Name, "UOS" ) );
-       assert ( l -> m_Next -> m_Next -> m_Next
-                && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Name, "PA2" ) );
-       assert ( l -> m_Next -> m_Next -> m_Next -> m_Next
-                && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "PA1" ) );
-       assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next == NULL );
-       l = sortList ( l, 1 );
-       assert ( l
-                && ! strcmp ( l -> m_Name, "AG1" ) );
-       assert ( l -> m_Next
-                && ! strcmp ( l -> m_Next -> m_Name, "LIN" ) );
-       assert ( l -> m_Next -> m_Next
-                && ! strcmp ( l -> m_Next -> m_Next -> m_Name, "PA1" ) );
-       assert ( l -> m_Next -> m_Next -> m_Next
-                && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Name, "PA2" ) );
-       assert ( l -> m_Next -> m_Next -> m_Next -> m_Next
-                && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "UOS" ) );
-       assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next == NULL );
-       strncpy ( tmp, "programming and algorithmic I", sizeof ( tmp ) - 1 );
-       tmp[sizeof ( tmp ) - 1 ] = '\0';
-       l = newItem ( tmp, l );
-       strncpy ( tmp, "AAG", sizeof ( tmp ) - 1 );
-       tmp[sizeof ( tmp ) - 1 ] = '\0';
-       l = newItem ( tmp, l );
-       assert ( l
-                && ! strcmp ( l -> m_Name, "AAG" ) );
-       assert ( l -> m_Next
-                && ! strcmp ( l -> m_Next -> m_Name, "programming and algorithmic I" ) );
-       assert ( l -> m_Next -> m_Next
-                && ! strcmp ( l -> m_Next -> m_Next -> m_Name, "AG1" ) );
-       assert ( l -> m_Next -> m_Next -> m_Next
-                && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Name, "LIN" ) );
-       assert ( l -> m_Next -> m_Next -> m_Next -> m_Next
-                && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "PA1" ) );
-       assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next
-                && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "PA2" ) );
-       assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next
-                && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "UOS" ) );
-       assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next == NULL );
-       l = sortList ( l, 0 );
-       assert ( l
-                && ! strcmp ( l -> m_Name, "programming and algorithmic I" ) );
-       assert ( l -> m_Next
-                && ! strcmp ( l -> m_Next -> m_Name, "UOS" ) );
-       assert ( l -> m_Next -> m_Next
-                && ! strcmp ( l -> m_Next -> m_Next -> m_Name, "PA2" ) );
-       assert ( l -> m_Next -> m_Next -> m_Next
-                && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Name, "PA1" ) );
-       assert ( l -> m_Next -> m_Next -> m_Next -> m_Next
-                && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "LIN" ) );
-       assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next
-                && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "AG1" ) );
-       assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next
-                && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "AAG" ) );
-       assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next == NULL );
-
+             && ! strcmp ( l -> m_Name, "AG1" ) );
+    assert ( l -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Name, "BI-PA1" ) );
+    assert ( l -> m_Next -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Next -> m_Name, "BIE-PA2" ) );
+    assert ( l -> m_Next -> m_Next -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Name, "NI-PAR" ) );
+    assert ( l -> m_Next -> m_Next -> m_Next -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "lin" ) );
+    assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next == NULL );
+    l = sortListCmp ( l, 1, cmpNameInsensitive );
+    assert ( l
+             && ! strcmp ( l -> m_Name, "AG1" ) );
+    assert ( l -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Name, "BI-PA1" ) );
+    assert ( l -> m_Next -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Next -> m_Name, "BIE-PA2" ) );
+    assert ( l -> m_Next -> m_Next -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Name, "lin" ) );
+    assert ( l -> m_Next -> m_Next -> m_Next -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "NI-PAR" ) );
+    assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next == NULL );
+    l = sortListCmp ( l, 1, cmpNameLen );
+    assert ( l
+             && ! strcmp ( l -> m_Name, "AG1" ) );
+    assert ( l -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Name, "lin" ) );
+    assert ( l -> m_Next -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Next -> m_Name, "BI-PA1" ) );
+    assert ( l -> m_Next -> m_Next -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Name, "NI-PAR" ) );
+    assert ( l -> m_Next -> m_Next -> m_Next -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "BIE-PA2" ) );
+    assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next == NULL );
+    l = newItem ( "AAG.3", l );
+    assert ( l
+             && ! strcmp ( l -> m_Name, "AAG.3" ) );
+    assert ( l -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Name, "AG1" ) );
+    assert ( l -> m_Next -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Next -> m_Name, "lin" ) );
+    assert ( l -> m_Next -> m_Next -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Name, "BI-PA1" ) );
+    assert ( l -> m_Next -> m_Next -> m_Next -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "NI-PAR" ) );
+    assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "BIE-PA2" ) );
+    assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next == NULL );
+    l = sortListCmp ( l, 0, cmpNameLen );
+    assert ( l
+             && ! strcmp ( l -> m_Name, "BIE-PA2" ) );
+    assert ( l -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Name, "BI-PA1" ) );
+    assert ( l -> m_Next -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Next -> m_Name, "NI-PAR" ) );
+    assert ( l -> m_Next -> m_Next -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Name, "AAG.3" ) );
+    assert ( l -> m_Next -> m_Next -> m_Next -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "AG1" ) );
+    assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "lin" ) );
+    assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next == NULL );
+    freeList ( l );
+    l = NULL;
+    strncpy ( tmp, "BI-PA1", sizeof ( tmp ) - 1 );
+    tmp[sizeof ( tmp ) - 1 ] = '\0';
+    l = newItem ( tmp, l );
+    strncpy ( tmp, "BIE-PA2", sizeof ( tmp ) - 1 );
+    tmp[sizeof ( tmp ) - 1 ] = '\0';
+    l = newItem ( tmp, l );
+    strncpy ( tmp, "NI-PAR", sizeof ( tmp ) - 1 );
+    tmp[sizeof ( tmp ) - 1 ] = '\0';
+    l = newItem ( tmp, l );
+    strncpy ( tmp, "lin", sizeof ( tmp ) - 1 );
+    tmp[sizeof ( tmp ) - 1 ] = '\0';
+    l = newItem ( tmp, l );
+    strncpy ( tmp, "AG1", sizeof ( tmp ) - 1 );
+    tmp[sizeof ( tmp ) - 1 ] = '\0';
+    l = newItem ( tmp, l );
+    assert ( l
+             && ! strcmp ( l -> m_Name, "AG1" ) );
+    assert ( l -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Name, "lin" ) );
+    assert ( l -> m_Next -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Next -> m_Name, "NI-PAR" ) );
+    assert ( l -> m_Next -> m_Next -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Name, "BIE-PA2" ) );
+    assert ( l -> m_Next -> m_Next -> m_Next -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "BI-PA1" ) );
+    assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next == NULL );
+    l = sortListCmp ( l, 1, cmpName );
+    assert ( l
+             && ! strcmp ( l -> m_Name, "AG1" ) );
+    assert ( l -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Name, "BI-PA1" ) );
+    assert ( l -> m_Next -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Next -> m_Name, "BIE-PA2" ) );
+    assert ( l -> m_Next -> m_Next -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Name, "NI-PAR" ) );
+    assert ( l -> m_Next -> m_Next -> m_Next -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "lin" ) );
+    assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next == NULL );
+    l = sortListCmp ( l, 1, cmpNameInsensitive );
+    assert ( l
+             && ! strcmp ( l -> m_Name, "AG1" ) );
+    assert ( l -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Name, "BI-PA1" ) );
+    assert ( l -> m_Next -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Next -> m_Name, "BIE-PA2" ) );
+    assert ( l -> m_Next -> m_Next -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Name, "lin" ) );
+    assert ( l -> m_Next -> m_Next -> m_Next -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "NI-PAR" ) );
+    assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next == NULL );
+    l = sortListCmp ( l, 1, cmpNameLen );
+    assert ( l
+             && ! strcmp ( l -> m_Name, "AG1" ) );
+    assert ( l -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Name, "lin" ) );
+    assert ( l -> m_Next -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Next -> m_Name, "BI-PA1" ) );
+    assert ( l -> m_Next -> m_Next -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Name, "NI-PAR" ) );
+    assert ( l -> m_Next -> m_Next -> m_Next -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "BIE-PA2" ) );
+    assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next == NULL );
+    strncpy ( tmp, "AAG.3", sizeof ( tmp ) - 1 );
+    tmp[sizeof ( tmp ) - 1 ] = '\0';
+    l = newItem ( tmp, l );
+    assert ( l
+             && ! strcmp ( l -> m_Name, "AAG.3" ) );
+    assert ( l -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Name, "AG1" ) );
+    assert ( l -> m_Next -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Next -> m_Name, "lin" ) );
+    assert ( l -> m_Next -> m_Next -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Name, "BI-PA1" ) );
+    assert ( l -> m_Next -> m_Next -> m_Next -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "NI-PAR" ) );
+    assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "BIE-PA2" ) );
+    assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next == NULL );
+    l = sortListCmp ( l, 0, cmpNameLen );
+    assert ( l
+             && ! strcmp ( l -> m_Name, "BIE-PA2" ) );
+    assert ( l -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Name, "BI-PA1" ) );
+    assert ( l -> m_Next -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Next -> m_Name, "NI-PAR" ) );
+    assert ( l -> m_Next -> m_Next -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Name, "AAG.3" ) );
+    assert ( l -> m_Next -> m_Next -> m_Next -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "AG1" ) );
+    assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next
+             && ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "lin" ) );
+    assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next == NULL );
     freeList ( l );
     return EXIT_SUCCESS;
 }
