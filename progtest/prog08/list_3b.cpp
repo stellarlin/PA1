@@ -79,7 +79,7 @@ TITEM * sortList ( TITEM * l,  int ascending )
 
             if( name_compare(start->m_Name, start->m_Next->m_Name, type)) {
                 swap_item(start, start->m_Next);
-                swapped = 1;
+                swapped = true;
             }
             start = start->m_Next;
         }
