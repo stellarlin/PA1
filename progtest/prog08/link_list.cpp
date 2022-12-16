@@ -1,8 +1,8 @@
 #ifndef __PROGTEST__
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <cassert>
 
 typedef struct TItem
 {
@@ -38,15 +38,16 @@ TITEM * allocation_item (void)
 {
     TITEM * item;
     item=(TITEM *) malloc (sizeof (TITEM));
-    if (item == NULL)  item = allocation_item();
+    if (item == nullptr)  item = allocation_item();
     return item;
 }
 
 char * allocation_name ( size_t size)
 {
+    if(size==1) return nullptr;
     char * name;
     name = (char *) malloc (size* sizeof (char));
-    if(name ==NULL) name = allocation_name(size);
+    if(name ==nullptr) name = allocation_name(size);
     return name;
 }
 TITEM * newItem ( const char * name, TITEM * next )
@@ -55,9 +56,9 @@ TITEM * newItem ( const char * name, TITEM * next )
    newTI=allocation_item();
    size_t name_size= strlen(name)+1;
    newTI->m_Name= allocation_name(name_size);
-   strcpy(newTI->m_Name, name);
+   if (name_size!=1) strcpy(newTI->m_Name, name);
    newTI->m_Next=next;
-   for(size_t i=0; i<name_size;i++) newTI->m_Secret[i]='\0';
+   for(char & i : newTI->m_Secret) i='\0';
    return newTI;
 }
 
@@ -79,15 +80,15 @@ TITEM * sortListCmp  ( TITEM* l, int ascending, int (* cmpFn) ( const TITEM *, c
     if (ascending==0) type = DESC;
     else type = ASC;
 
-    TITEM * start = NULL;
-    TITEM * end = NULL;
+    TITEM * start;
+    TITEM * end = nullptr;
     bool swapped = true;
 
-    if (l == NULL || l->m_Next ==NULL) return l;
+    if (l == nullptr || l->m_Next ==nullptr) return l;
 
     while (swapped)
     {
-        swapped = 0;
+        swapped = false;
         start = l;
 
         while (start->m_Next!=end)
@@ -95,7 +96,7 @@ TITEM * sortListCmp  ( TITEM* l, int ascending, int (* cmpFn) ( const TITEM *, c
 
             if( name_compare(start, start->m_Next, type, cmpFn)) {
                 swap_item(start, start->m_Next);
-                swapped = 1;
+                swapped = true;
             }
             start = start->m_Next;
         }
@@ -106,13 +107,13 @@ TITEM * sortListCmp  ( TITEM* l, int ascending, int (* cmpFn) ( const TITEM *, c
 
 void freeList     ( TITEM * src )
 {
-  TITEM * tmp;
-  while ( src != NULL)
+  TITEM * tmp = src;
+  while ( src)
   {
-      tmp = src;
       src = src ->m_Next;
       free(tmp->m_Name);
       free (tmp);
+      tmp = src;
   }
 }
 
@@ -125,6 +126,7 @@ int main ( int argc, char * argv [] )
 
     assert ( sizeof ( TITEM ) == sizeof ( TITEM * ) + sizeof ( char * ) + 24 * sizeof ( char ) );
     l = NULL;
+    //l = newItem ( "", l );
     l = newItem ( "BI-PA1", l );
     l = newItem ( "BIE-PA2", l );
     l = newItem ( "NI-PAR", l );
