@@ -50,10 +50,10 @@ bool name_compare(const char *name1, const char *name2, bool type) {
     return type == ASC ?  strcmp(name1, name2)>0 : strcmp(name1, name2)<0;
 }
 
-void swap_item(TITEM **firstIT, TItem **secondIT) {
-    TItem ** tmp = firstIT;
-    firstIT=secondIT;
-    secondIT=tmp;
+void swap_item(TITEM ** firstIT, TItem ** secondIT) {
+    TItem  * tmp =  *firstIT;
+    *firstIT=*secondIT;
+    *secondIT=tmp;
 }
 
 
@@ -110,6 +110,7 @@ TITEM * sortList ( TITEM * l,  int ascending )
         }
         done=start;
         start=start->m_Next;
+   //     if(!start)break;
     }
     return l;
 }
