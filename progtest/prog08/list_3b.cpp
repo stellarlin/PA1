@@ -50,10 +50,10 @@ bool name_compare(const char *name1, const char *name2, bool type) {
     return type == ASC ?  strcmp(name1, name2)>0 : strcmp(name1, name2)<0;
 }
 
-void swap_item(TITEM *firstIT, TItem *secondIT) {
-    char *tmp = firstIT->m_Name;
-    firstIT->m_Name=secondIT->m_Name;
-    secondIT->m_Name=tmp;
+void swap_item(TITEM **firstIT, TItem **secondIT) {
+    TItem ** tmp = firstIT;
+    firstIT=secondIT;
+    secondIT=tmp;
 }
 
 
@@ -63,27 +63,53 @@ TITEM * sortList ( TITEM * l,  int ascending )
     if (ascending==0) type = DESC;
     else type = ASC;
 
+    TITEM * done;
     TITEM * start = nullptr;
-    TITEM * end = nullptr;
-    bool swapped = true;
+    TITEM * prev;
+    TITEM * current = nullptr;
+
+    bool isHEAD = false, isSEQ=false;
 
     if (l == nullptr ) return l;
 
-    while (swapped)
+    done=start=l;
+    while(start->m_Next)
     {
-        swapped = false;
-        start = l;
+        prev=current=start->m_Next;
+        while(current) {
+            if (name_compare(start->m_Name, current->m_Name, type)) {
 
-        while (start->m_Next!=end)
-        {
+                // If end and current have some non-zero
+                // number of nodes in between them
+                if (current != start->m_Next) isSEQ=true;
+                    //case 1: start is head
+                if (start == l) isHEAD=true;
+                if(isSEQ) {
+                    swap_item(&start->m_Next, &current->m_Next);
+                    prev->m_Next = start;
+                }
+                else {
+                    start->m_Next = current->m_Next;
+                    current->m_Next = start;
+                }
+                    if(!isHEAD) done->m_Next= current;
+                    swap_item(&start, &current);
 
-            if( name_compare(start->m_Name, start->m_Next->m_Name, type)) {
-                swap_item(start, start->m_Next);
-                swapped = true;
+                     prev=current;
+                     if(isHEAD) l = start;
+
+                     current=current->m_Next;
+                     isHEAD=false;
+                     isSEQ=false;
             }
-            start = start->m_Next;
+            else
+            {
+                prev=current;
+                current=current->m_Next;
+            }
         }
-        end = start;
+        done=start;
+        start=start->m_Next;
     }
     return l;
 }
