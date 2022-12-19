@@ -77,7 +77,7 @@ double distance (AIRPLANE_COORDINATE first, AIRPLANE_COORDINATE next)
 //    else if distance is the same as minimal, add 1 to count
 //______________________________________________________________
 
-void find_min_distance(AIRPLANE_COORDINATE * airpl_data, int count, double * global_min, MIN_DISTANCE * min_arr) {
+void find_global_min(AIRPLANE_COORDINATE * airpl_data, int count, double * global_min, MIN_DISTANCE * min_arr) {
 
     double diff;
 
@@ -100,8 +100,9 @@ void find_min_distance(AIRPLANE_COORDINATE * airpl_data, int count, double * glo
     }
 }
 
+//function to count all pairs with minimal distance
 
-void global_count_sum (MIN_DISTANCE * min_arr,  double * global_min, int * global_count, int count )
+void find_global_count (MIN_DISTANCE * min_arr,  double * global_min, int * global_count, int count )
 {
     for(int i = 0; i<count; i++)
     {
@@ -109,26 +110,39 @@ void global_count_sum (MIN_DISTANCE * min_arr,  double * global_min, int * globa
     }
 }
 
+//function to print global min
 void print_global_min(double min) {
     printf("Vzdalenost nejblizsich letadel: %f\n", min);
 }
+//function to print count of pair with minimal distance
 void print_global_count(int count) {
     printf("Nalezenych dvojic: %d\n", count);
 }
-
+//function to print one pair of airplanes
 void print_pair(AIRPLANE_COORDINATE first, AIRPLANE_COORDINATE second) {
     printf("%s - %s\n", first.name, second.name);
 }
 
-void min_pair_print(AIRPLANE_COORDINATE *airpl_data, int count, double global_min, MIN_DISTANCE *min_arr) {
+
+//function to print all pairs with the closest distance between two airplanes
+//______________________________________________________________
+//for each  airplane, which minimal distance  is equal to global minimal distance
+//for all pairs with this airplane
+//1) search pair with global distance
+//2) print this pair
+//______________________________________________________________
+
+void print_global_pair(AIRPLANE_COORDINATE *airpl_data, int count, double global_min, MIN_DISTANCE *min_arr) {
 
     double diff;
 
     for (int i = 0; i < count - 1; i++) {
         if (dbl_eps_check(min_arr[i].min, global_min)) continue;
         for (int j = i+1; j < count; j++) {
+            //1) search pair with global distance
             diff = distance(airpl_data[i], airpl_data[j]);
             if(dbl_eps_check(diff,global_min))continue;
+            //2) print this pair
             print_pair(airpl_data[i], airpl_data[j]);
         }
     }
@@ -162,11 +176,15 @@ int main (void)
         min_array[i].count=0;
     }
 
-    find_min_distance(airpl_data, count, &global_min, min_array);
+    //function to find the closest distance between all airplane and print it
+    find_global_min(airpl_data, count, &global_min, min_array);
     print_global_min (global_min);
-    global_count_sum(min_array, &global_min, &global_count, count);
+    //function to count pairs with the closest distance between two airplanes and print it
+    find_global_count(min_array, &global_min, &global_count, count);
     print_global_count (global_count);
-    min_pair_print(airpl_data, count, global_min, min_array);
+    //function to print all pairs with the closest distance between two airplanes
+    print_global_pair(airpl_data, count, global_min, min_array);
+
     free(airpl_data);
     free(min_array);
     return 0;
