@@ -82,7 +82,7 @@ TITEM * sortList ( TITEM * l,  int ascending )
                 // If end and current have some non-zero
                 // number of nodes in between them
                 if (current != start->m_Next) isSEQ=true;
-                    //case 1: start is head
+                //case 1: start is head
                 if (start == l) isHEAD=true;
                 if(isSEQ) {
                     swap_item(&start->m_Next, &current->m_Next);
@@ -92,15 +92,15 @@ TITEM * sortList ( TITEM * l,  int ascending )
                     start->m_Next = current->m_Next;
                     current->m_Next = start;
                 }
-                    if(!isHEAD) done->m_Next= current;
-                    swap_item(&start, &current);
+                if(!isHEAD) done->m_Next= current;
+                swap_item(&start, &current);
 
-                     prev=current;
-                     if(isHEAD) l = start;
+                prev=current;
+                if(isHEAD) l = start;
 
-                     current=current->m_Next;
-                     isHEAD=false;
-                     isSEQ=false;
+                current=current->m_Next;
+                isHEAD=false;
+                isSEQ=false;
             }
             else
             {
@@ -110,7 +110,6 @@ TITEM * sortList ( TITEM * l,  int ascending )
         }
         done=start;
         start=start->m_Next;
-   //     if(!start)break;
     }
     return l;
 }
