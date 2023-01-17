@@ -80,6 +80,45 @@ TITEM * sorting_condition_combine(TITEM *first, TITEM *second, const bool type, 
         res->m_Next= sorting_condition_combine(first, second->m_Next, type, cmpFn);
     }
     else
+
+    {
+        res = first;
+        res->m_Next= sorting_condition_combine(first->m_Next, second, type, cmpFn);
+    }
+        return res;
+}
+
+
+void split_list(TITEM *src, TITEM **first, TITEM **second) {
+
+    TITEM * slow = src;
+    TITEM * fast = src ->m_Next;
+
+    while (fast)
+    {
+        fast = fast->m_Next;
+        if (fast)
+        {
+            slow=slow->m_Next;
+            fast = fast->m_Next;
+        }
+    }
+    *first = src;
+    *second=slow->m_Next;
+    slow->m_Next = NULL;
+
+
+
+TITEM * sorting_condition_combine(TITEM *first, TITEM *second, const bool type, int (* cmpFn) ( const TITEM *, const TITEM *)) {
+    TITEM * res;
+    if ( !first) return second;
+    else if (!second) return first;
+    if (name_compare(first, second, type, cmpFn))
+    {
+        res = second;
+        res->m_Next= sorting_condition_combine(first, second->m_Next, type, cmpFn);
+    }
+    else
     {
         res = first;
         res->m_Next= sorting_condition_combine(first->m_Next, second, type, cmpFn);
@@ -118,7 +157,7 @@ TITEM * sortListCmp  ( TITEM* l, int ascending, int (* cmpFn) ( const TITEM *, c
     TITEM * head = l;
     TITEM * first;
     TITEM * second;
-=
+
     if (head == nullptr || head->m_Next == nullptr) return l;
     split_list(head, &first, &second);
     first = sortListCmp(first, type, cmpFn);

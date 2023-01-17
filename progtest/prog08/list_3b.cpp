@@ -45,33 +45,67 @@ TITEM * newItem ( const char * name, TITEM * next )
 }
 
 
-
 bool name_compare(const char *name1, const char *name2, bool type) {
     return type == ASC ?  strcmp(name1, name2)>0 : strcmp(name1, name2)<0;
 }
 
-void swap_item(TITEM ** firstIT, TItem ** secondIT) {
-    TItem  * tmp =  *firstIT;
-    *firstIT=*secondIT;
-    *secondIT=tmp;
+void split_list(TITEM *src, TITEM **first, TITEM **second) {
+
+    TITEM * slow = src;
+    TITEM * fast = src ->m_Next;
+
+    while (fast)
+    {
+        fast = fast->m_Next;
+        if (fast)
+        {
+            slow=slow->m_Next;
+            fast = fast->m_Next;
+        }
+    }
+    *first = src;
+    *second=slow->m_Next;
+    slow->m_Next = NULL;
 }
+TITEM * sorting_condition_combine(TITEM *first, TITEM *second, const bool type) {
+    TITEM * res;
+    if ( !first) return second;
+    else if (!second) return first;
+    if (name_compare(first->m_Name, second->m_Name, type))
+    {
+        res = second;
+        res->m_Next= sorting_condition_combine(first, second->m_Next, type);
+    }
+    else
 
-
-TITEM * sortList ( TITEM * l,  int ascending )
+    {
+        res = first;
+        res->m_Next= sorting_condition_combine(first->m_Next, second, type);
+    }
+        return res;
+}
+TITEM * sortList (TITEM * l, int ascending )
 {
-    bool type;
+    int type;
     if (ascending==0) type = DESC;
     else type = ASC;
 
-    TITEM * done;
-    TITEM * start = nullptr;
-    TITEM * prev;
-    TITEM * current = nullptr;
+    TITEM * head = l;
+    TITEM * first;
+    TITEM * second;
 
-    bool isHEAD = false, isSEQ=false;
+    if (head == nullptr || head->m_Next == nullptr) return l;
+    split_list(head, &first, &second);
+    first = sortList(first, type);
+    second = sortList(second, type);
 
-    if (l == nullptr ) return l;
+    l = sorting_condition_combine (first, second, type);
+    return l;
 
+   // bool isHEAD = false, isSEQ=false;
+
+
+/*
     done=start=l;
     while(start->m_Next)
     {
@@ -110,8 +144,9 @@ TITEM * sortList ( TITEM * l,  int ascending )
         }
         done=start;
         start=start->m_Next;
-        //     if(!start)break;
     }
+
+*/
     return l;
 }
 
@@ -136,7 +171,6 @@ int main ( int argc, char * argv [] )
     assert ( sizeof ( TITEM ) == sizeof ( TITEM * ) + sizeof ( char * ) + 24 * sizeof ( char ) );
     l = NULL;
     l = newItem ( "PA1", l );
-    l = sortList ( l, 1 );
     l = newItem ( "PA2", l );
     l = newItem ( "UOS", l );
     l = newItem ( "LIN", l );
