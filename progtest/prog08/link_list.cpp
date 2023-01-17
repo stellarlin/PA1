@@ -67,41 +67,64 @@ bool name_compare(TITEM * firstIT, TITEM * secondIT,  bool type, int (* cmpFn) (
     return type == ASC ?  cmpFn(firstIT, secondIT) > 0 : cmpFn(firstIT, secondIT) < 0;
 }
 
-void swap_item(TITEM *firstIT, TItem *secondIT) {
-    char *tmp = firstIT->m_Name;
-    firstIT->m_Name=secondIT->m_Name;
-    secondIT->m_Name=tmp;
+
+
+
+TITEM * sorting_condition_combine(TITEM *first, TITEM *second, const bool type, int (* cmpFn) ( const TITEM *, const TITEM *)) {
+    TITEM * res;
+    if ( !first) return second;
+    else if (!second) return first;
+    if (name_compare(first, second, type, cmpFn))
+    {
+        res = second;
+        res->m_Next= sorting_condition_combine(first, second->m_Next, type, cmpFn);
+    }
+    else
+    {
+        res = first;
+        res->m_Next= sorting_condition_combine(first->m_Next, second, type, cmpFn);
+    }
+        return res;
+}
+
+
+void split_list(TITEM *src, TITEM **first, TITEM **second) {
+
+    TITEM * slow = src;
+    TITEM * fast = src ->m_Next;
+
+    while (fast)
+    {
+        fast = fast->m_Next;
+        if (fast)
+        {
+            slow=slow->m_Next;
+            fast = fast->m_Next;
+        }
+    }
+    *first = src;
+    *second=slow->m_Next;
+    slow->m_Next = NULL;
 }
 
 
 TITEM * sortListCmp  ( TITEM* l, int ascending, int (* cmpFn) ( const TITEM *, const TITEM *) )
 {
-    bool type;
+
+    int type;
     if (ascending==0) type = DESC;
     else type = ASC;
 
-    TITEM * start;
-    TITEM * end = nullptr;
-    bool swapped = true;
+    TITEM * head = l;
+    TITEM * first;
+    TITEM * second;
+=
+    if (head == nullptr || head->m_Next == nullptr) return l;
+    split_list(head, &first, &second);
+    first = sortListCmp(first, type, cmpFn);
+    second = sortListCmp(second, type, cmpFn);
 
-    if (l == nullptr || l->m_Next ==nullptr) return l;
-
-    while (swapped)
-    {
-        swapped = false;
-        start = l;
-
-        while (start->m_Next!=end)
-        {
-
-            if( name_compare(start, start->m_Next, type, cmpFn)) {
-                swap_item(start, start->m_Next);
-                swapped = true;
-            }
-            start = start->m_Next;
-        }
-        end = start;
-    }
+    l = sorting_condition_combine (first, second, type, cmpFn);
     return l;
 }
 
