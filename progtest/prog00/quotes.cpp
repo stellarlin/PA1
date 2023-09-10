@@ -8,7 +8,7 @@ int error (void) {
 }
 
 // show the sentence with number 1-9
-bool sentence (const int n)
+bool displaySentence (const int n)
 {
     switch(n)
     {
@@ -39,12 +39,17 @@ bool sentence (const int n)
 
         case 9: printf("Qapla'\n"
                        "leghlaHchu'be'chugh mIn lo'laHbe' taj jej.\n");
-        default: return false;
+        default: break;
     }
     return true;
 }
 
-bool isWhite (void)
+bool isValid (const int n)
+{
+    return (n<1 || n>9 );
+}
+
+bool isLineEnding (void)
 {
     char c;
     while ((c = getchar())!=EOF )
@@ -56,14 +61,16 @@ bool isWhite (void)
 
 int main(void)
 {
-    double n;
-    // future loop base
+    int n;
     printf("ml' nob:\n");
-    if(scanf(" %lf", &n)!=1 // input has less then ome correct integer
-       || !isWhite() // after number of sentence there is another text
-       || !sentence(n) // number is more then 9 or less then 1
-       ) return error();
+    //skipping lrading zeroes. example: 00007 = 7
+    do{
+        if(scanf(" %1d", &n)!=1) return error();
+    } while(n == 0);
+
+    if(isValid(n) //if  number is more then 9 or less then 1
+    || ! isLineEnding() // or after number of sentence there is another text
+            ) return error(); // stop the program
+    displaySentence(n);
     return 0;
 }
-
-
