@@ -1,13 +1,20 @@
 #include<cstdio>
 #include <cctype>
 
-#define RANGE true
-#define SYNTAX false
+enum modes {RANGE, NAN, SYNTAX};
 
 // Stop the program and show error message
-int error (bool mode, const int number = 0) {
-   mode ? printf("Neh mi'\n")
-        : printf("Qih mi' %d\n", number);
+int error (const modes mode, const int number = 0) {
+   switch(mode) {
+       case NAN:
+           printf("Neh mi'\n");
+           break;
+       case RANGE:
+           printf("Qih mi' %d\n", number);
+           break;
+       case SYNTAX:
+           printf("bIjatlh 'e' yImev\n");
+   }
     return 0;
 }
 
@@ -63,11 +70,19 @@ bool isLineEnding (void)
 
 int main(void)
 {
-    int n;
+    int n = -1;
+    char c;
     printf("ml' nob:\n");
+
     //skipping leading zeroes. example: 00007 = 7
     do{
-        if(scanf(" %1d", &n)!=1) return error(SYNTAX);
+        if(n==0)
+        {
+            if ((c = getchar()) == EOF) break;
+            else if (isspace(c)) break;
+            else ungetc(c, stdout);
+        }
+        if(scanf(" %1d", &n)!=1)return error(NAN);
     } while(n == 0);
 
     if(!isValid(n) ) return error(RANGE, n); //if  number is more then 9 or less then 1, stop the program
