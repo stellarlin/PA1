@@ -71,25 +71,16 @@ bool isLineEnding (void)
 int main(void)
 {
     int n = -1;
-    char c;
     printf("ml' nob:\n");
 
-    //skipping leading zeroes. example: 00007 = 7
-    do{
-        if(n==0)
-        {
-            if ((c = getchar()) == EOF) break;
-            else if (isspace(c)) break;
-            else ungetc(c, stdout);
-        }
-        if(scanf(" %1d", &n)!=1)return error(NAN);
-    } while(n == 0);
+    if(scanf(" %d", &n)!=1) return error(NAN);
 
-    if(!isValid(n) ) return error(RANGE, n); //if  number is more then 9 or less then 1, stop the program
-                                                          // with range error message
+    if(!isValid(n) ) return error(RANGE, n); //if  number is more than 9 or less than 1, stop the program
+    // with range error message
     if(!isLineEnding()) return error (SYNTAX); // if after number of sentence there is another text, stop the program
-                                                  // with  syntax error message
+    // with  syntax error message
 
     displaySentence(n);
+
     return 0;
 }
