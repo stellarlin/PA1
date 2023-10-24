@@ -66,6 +66,8 @@ bool readMessage (Message * message)
                     (remainder_reading ? message->remainder : message->word) += decodeSymbol(symbol);
         }
         }
+    //
+    //
     printf("remainder and word: %lld  + %lld\n", message->remainder,  message->word);
     return message->word != 0;
 }
@@ -93,7 +95,7 @@ bool readData (SETI * data)
         if (current_message->word > 1) data->message_counter++;
         else  current_message->word = 0, current_message->remainder = 0;
     }
-    return true;
+    return data->message_counter > 1;
 }
 
 
@@ -106,35 +108,85 @@ long long int gcd ( long long int  a, long long int  b)
 
 bool CRT_condition ( SETI * data)
 {
-    for (Message *current = &data->signal_storage[0]; current != &data->signal_storage[MAX_MESSAGES]; current++)
+    for (Message *current = &data->signal_storage[0]; current < &data->signal_storage[data->message_counter]; current++)
     {
-        for(Message *next = current + 1; next != &data->signal_storage[MAX_MESSAGES]; next++)
+        for(Message *next = current + 1; next < &data->signal_storage[data->message_counter]; next++)
         {
-            if (gcd (current->word, next->word) != 1) return false;
+
+            //
+            //
+            printf ("gcd of %lld and % lld is %lld\n", current->word, next->word, gcd (current->word, next->word));
+            if ((current->remainder - next->remainder) % gcd (current->word, next->word) != 0) return false;
         }
     }
     return true;
 }
 
-long long int CRT_evaluate (SETI * data)
+long long int mInv ( long long int num,  long long int mod)
 {
-    
-
-
+    long long int  inv = 1;
+    for ( long long int i = 1; i < mod; i++)
+    {
+        if ((num * i) % mod == 1) return i;
+    }
+    return inv;
 }
 
-bool calculateSynchronization (SETI * data)
+long long int gMod (SETI * data)
 {
-    if (!CRT_condition(data)) return false;
+    long long int global_module;
+    for (Message *current = &data->signal_storage[0]; current != &data->signal_storage[data->message_counter]; current++)
+    {
+        if (current == &data->signal_storage[0]) {
+            global_module = current->word;
+            continue;
+        }
 
-   return true;
+        global_module = ( (current->word * global_module)/ (gcd(current->word, global_module)));
+    }
+    return global_module;
+}
+
+
+long long int CRT_evaluate (SETI * data)
+{
+    long long int global_module = gMod(data), total = 0;
+
+    printf ("Global module is %lld\n", global_module);
+
+    for (Message *current = &data->signal_storage[0]; current != &data->signal_storage[data->message_counter]; current++)
+    {
+        long long int module = global_module / current->word;
+        //
+        //
+        printf ("Module of %lld is %lld\n"
+                "Inverse of %lld is %lld\n", current->word, module, module, mInv(module, current->word));
+
+
+        total += mInv(module, current->word) * current->remainder * module;
+        printf ("Total is  %lld\n", total);
+    }
+
+    total = (total % global_module);
+    printf ("Total is  %lld\n", total);
+    return total;
+}
+
+void calculateSynchronization (SETI * data)
+{
+    if (!CRT_condition(data))
+    {
+        printf("Nelze dosahnout.\n");
+        return;
+    }
+    CRT_evaluate(data);
 }
 
 int main (void)
 {
     SETI data;
     if (!readData(&data)) return error();
-    if (calculateSynchronization (&data)) return error();
+    calculateSynchronization (&data);
     return 0;
 }
 
