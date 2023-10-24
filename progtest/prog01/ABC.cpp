@@ -29,7 +29,7 @@ int readTime ()
        || m < 0 || m > 59) return -1;
     return h*60 + m;
 }
-bool readStation (CTrain * train)
+bool readTrain (CTrain * train)
 {
 
     printf("Cas prijezdu vlaku %c:\n", train->name);
@@ -49,6 +49,8 @@ bool checkTransfer (const CTrain * train_a, const CTrain *  train_b)
 
     return transfer_time >= MIN_WAITING && arrival_difference <= MAX_WAITING;
 }
+
+
 void calculateTransfer (CTrain * current, const CTrain * option1, const CTrain * option2 )
 {
     char transfers [3] = "";
@@ -72,9 +74,9 @@ void calculateTransfer (CTrain * current, const CTrain * option1, const CTrain *
 int main (void)
 {
     CTrain A('A'), B('B'), C ('C');
-    if(!readStation(&A)) return error();
-    if(!readStation(&B)) return error();
-    if(!readStation(&C)) return error();
+    if(!readTrain(&A)) return error();
+    if(!readTrain(&B)) return error();
+    if(!readTrain(&C)) return error();
     calculateTransfer(&A, &B, &C);
     calculateTransfer(&B, &A, &C);
     calculateTransfer(&C, &A, &B);
