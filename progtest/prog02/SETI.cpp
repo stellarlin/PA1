@@ -17,6 +17,12 @@ struct Message
     long long int word = 0;
 };
 
+struct SETI
+{
+    Message  signal_storage [MAX_MESSAGES];
+    int message_counter = 0;
+};
+
 long long int decodeSymbol (char symbol)
 {
     int result = 1;
@@ -60,34 +66,75 @@ bool readMessage (Message * message)
                     (remainder_reading ? message->remainder : message->word) += decodeSymbol(symbol);
         }
         }
-    //printf("remainder and word: %lld  + %lld\n ", message->remainder,  message->word);
+    printf("remainder and word: %lld  + %lld\n", message->remainder,  message->word);
     return message->word != 0;
 }
 
-
-
-bool calculateSynchronization ()
+bool readData (SETI * data)
 {
-    Message messages[MAX_MESSAGES], *current_message = &messages[0];
-
     char c;
     printf ("Zpravy:\n");
     while (1) {
 
         // ending condition
-        if (current_message == & messages[MAX_MESSAGES]) break;
+        //________________________________________
+        if (data->message_counter == MAX_MESSAGES) break;
         if ((c = getchar()) == EOF) break;
         else ungetc(c, stdin);
+        //________________________________________
 
+        // referenced to message_counter message in SETI signal storage to better code understanding
+        Message * current_message = &data->signal_storage[data->message_counter];
+
+        //try to read message from input, check if format is correct and decode symbols into 2 values
         if (!readMessage(current_message)) return false;
-        if (current_message->word > 1) current_message++;
+
+        // word with lenght of 1 isn't count
+        if (current_message->word > 1) data->message_counter++;
         else  current_message->word = 0, current_message->remainder = 0;
     }
+    return true;
+}
+
+
+long long int gcd ( long long int  a, long long int  b)
+{
+    if (b == 0) return a;
+    return gcd (b, a % b);
+}
+
+
+bool CRT_condition ( SETI * data)
+{
+    for (Message *current = &data->signal_storage[0]; current != &data->signal_storage[MAX_MESSAGES]; current++)
+    {
+        for(Message *next = current + 1; next != &data->signal_storage[MAX_MESSAGES]; next++)
+        {
+            if (gcd (current->word, next->word) != 1) return false;
+        }
+    }
+    return true;
+}
+
+long long int CRT_evaluate (SETI * data)
+{
+    
+
+
+}
+
+bool calculateSynchronization (SETI * data)
+{
+    if (!CRT_condition(data)) return false;
+
    return true;
 }
 
 int main (void)
 {
-    return calculateSynchronization () ? 0 : error();
+    SETI data;
+    if (!readData(&data)) return error();
+    if (calculateSynchronization (&data)) return error();
+    return 0;
 }
 
