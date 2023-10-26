@@ -10,19 +10,33 @@ enum results { correct, wrong, undefined };
 
 // Structure to represent a message with a remainder and a word
 struct Message {
-    long long int remainder = 0;
-    long long int word = 0;
+    __int128_t remainder = 0;
+    __int128_t word = 0;
 };
 
 // Structure to hold SetiData data, including the main equation, storage status, and message counter
 struct SetiData {
     Message main_equation;
     bool main_stored = false;
-    long long int message_counter = 0;
+    __int128_t message_counter = 0;
 };
 
+
+void print_int128 ( __int128_t n)
+{
+    if (n < 0) {
+        putchar('-');
+        n = -n;
+    }
+
+    if (n > 9) {
+        print_int128(n / 10);
+    }
+    putchar((n % 10) + '0');
+}
+
 // Function to decode a symbol into its numeric value
-long long int decodeSymbol(char symbol) {
+__int128_t decodeSymbol(char symbol) {
     int result = 1;
     int exp = symbol - 'a';
     int base = 2;
@@ -38,21 +52,21 @@ long long int decodeSymbol(char symbol) {
 }
 
 // Function to calculate the greatest common divisor (GCD) of two numbers using Euclidean algorithm
-long long int gcd(long long int a, long long int b) {
+__int128_t gcd(__int128_t a, __int128_t b) {
     if (a == 0)
         return b;
     return gcd(b % a, a);
 }
 
 // Extended Euclidean algorithm to find the coefficients x and y for the equation ax + by = gcd(a, b)
-void ext_gcd(long long int a, long long int b, long long int *x, long long int *y) {
+void ext_gcd(__int128_t a, __int128_t b, __int128_t *x, __int128_t *y) {
     if (a == 0) {
         *x = 0;
         *y = 1;
         return;
     }
 
-    long long int x1, y1; // To store results of recursive call
+    __int128_t x1, y1; // To store results of recursive call
     ext_gcd(b % a, a, &x1, &y1);
 
     // Update x and y using results of recursive call
@@ -62,26 +76,26 @@ void ext_gcd(long long int a, long long int b, long long int *x, long long int *
 
 // Function to perform the Chinese Remainder Theorem (CRT) evaluation and meld new equation into main equation
 bool CRT_evaluate(SetiData *data, Message *new_message) {
-    long long int module, main_coeff, next_coeff;
+    __int128_t module, main_coeff, next_coeff;
     Message &main_equation = data->main_equation;
 
-    long long int g = gcd(main_equation.word, new_message->word); //calculate gcd of current message and new to check
+    __int128_t g = gcd(main_equation.word, new_message->word); //calculate gcd of current message and new to check
                                                                        // the correctness
-
-    // Check if the difference of remainders is divisible by the GCD - if they're not, synchronization isn't possible
     if ((main_equation.remainder - new_message->remainder) % g != 0)
         return false;
 
     ext_gcd(main_equation.word / g, new_message->word / g, &main_coeff, &next_coeff); // find coefficient
                                             // of  the equation a_word/g x + b_word/g y = 1
-    module = main_equation.word / g * new_message->word; // LCM ow main and new equations
+    module = (main_equation.word / g) * new_message->word; // LCM ow main and new equations
 
     // Update the main equation with new values x = (a1 * m2/g * p + a2 * m1/g * q) mod LCM (m1, m2)
-    main_equation.remainder = (main_equation.remainder * (new_message->word / g) * next_coeff +
-                               new_message->remainder * (main_equation.word / g) * main_coeff) % module;
+    main_equation.remainder = main_equation.remainder % module * (new_message->word / g) % module * next_coeff % module  +
+                               new_message->remainder % module  * (main_equation.word / g) % module * main_coeff % module;
 
     if (main_equation.remainder < 0)
         main_equation.remainder += module; // Ensure the result isn't negative
+
+
     main_equation.word = module;
     return true;
 }
@@ -120,7 +134,7 @@ bool readMessage(Message *message) {
             (remainder_reading ? message->remainder : message->word) += decodeSymbol(symbol);
         }
     }
-    return message->word != 0; // word can't be empty
+   return message->word != 0; // word can't be empty
 }
 
 // Function to read data, update the SetiData structure, and determine the result
@@ -155,8 +169,8 @@ results readData(SetiData *data) {
         } else {
             // mild equation into the main equation
             if (!CRT_evaluate(data, &current_message))
-                return undefined;
-        }
+                return undefined;}
+
     }
 
     return data->message_counter > 1 ? correct : wrong;
@@ -168,8 +182,13 @@ int main(void) {
 
     if (result == wrong)
         return error();
-    result == undefined ? printf("Nelze dosahnout.\n")
-                        : printf("Synchronizace za: %lld\n", data.main_equation.remainder % data.main_equation.word);
+    else if (result == undefined) printf("Nelze dosahnout.\n");
+    else
+    {
+        printf("Synchronizace za: ");
+        !data.main_equation.word ? print_int128(0): print_int128( data.main_equation.remainder % data.main_equation.word);
+        printf("\n");
+    }
 
     return 0;
 }
