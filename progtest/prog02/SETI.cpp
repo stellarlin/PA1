@@ -45,7 +45,7 @@ bool readMessage (Message * message)
 {
     char symbol;
     bool start_detected = false, remainder_reading = true;
-    while (1)
+    while (true)
     {
         if ((symbol = getchar()) == EOF || symbol == '\n') break;
         else ungetc(symbol, stdin);
@@ -105,6 +105,25 @@ long long int gcd ( long long int  a, long long int  b)
     return gcd (b, a % b);
 }
 
+long long int ext_gcd ( long long int a,  long long  int b,  long long int * x,  long long  int * y) {
+
+    if (a == 0)
+    {
+        *x = 0;
+        *y = 1;
+        return b;
+    }
+
+    long long int x1, y1; // To store results of recursive call
+    int gcd = ext_gcd ( b % a, a, &x1, &y1);
+
+    // Update x and y using results of
+    // recursive call
+    *x = y1 - (b/a) * x1;
+    *y = x1;
+
+    return gcd;
+}
 
 bool CRT_condition ( SETI * data)
 {
@@ -112,16 +131,17 @@ bool CRT_condition ( SETI * data)
     {
         for(Message *next = current + 1; next < &data->signal_storage[data->message_counter]; next++)
         {
+            long long int g = gcd (current->word, next->word);
+            //
+            //
+            printf ("gcd of %lld and % lld is %lld\n", current->word, next->word, g);
 
-            //
-            //
-            printf ("gcd of %lld and % lld is %lld\n", current->word, next->word, gcd (current->word, next->word));
-            if ((current->remainder - next->remainder) % gcd (current->word, next->word) != 0) return false;
+            if ((current->remainder - next->remainder) % g != 0) return false;
         }
     }
     return true;
 }
-
+/*
 long long int mInv ( long long int num,  long long int mod)
 {
     long long int  inv = 1;
@@ -141,21 +161,42 @@ long long int gMod (SETI * data)
             global_module = current->word;
             continue;
         }
-
         global_module = ( (current->word * global_module)/ (gcd(current->word, global_module)));
     }
     return global_module;
 }
-
+*/
 
 long long int CRT_evaluate (SETI * data)
 {
-    long long int global_module = gMod(data), total = 0;
+    long long int module /*= gMod(data)*/, curr_coeff,  next_coeff;
+//
+//
+//    printf ("Global module is %lld\n", global_module);
 
-    printf ("Global module is %lld\n", global_module);
+    Message *main_equation = &data->signal_storage[0];
 
-    for (Message *current = &data->signal_storage[0]; current != &data->signal_storage[data->message_counter]; current++)
-    {
+    for (Message *current_equation = ++main_equation; current_equation != &data->signal_storage[data->message_counter]; current_equation++) {
+        long long int g = gcd(main_equation->word, current_equation->word);
+        if ((main_equation->remainder - current_equation->remainder) % g != 0) return -1;
+
+
+        ext_gcd(main_equation->word / g, current_equation->word / g, &curr_coeff, &next_coeff);
+        module = main_equation->word / g * current_equation->word;
+
+        main_equation->remainder = (main_equation->remainder * (current_equation->word / g) * next_coeff
+                              + current_equation->remainder * (main_equation->word / g) * curr_coeff) % module;
+
+
+        if (main_equation->remainder < 0) main_equation->remainder += module; /** Result is not suppose to be negative*/
+        main_equation->word = module;
+    }
+
+
+
+
+
+/*
         long long int module = global_module / current->word;
         //
         //
@@ -163,23 +204,21 @@ long long int CRT_evaluate (SETI * data)
                 "Inverse of %lld is %lld\n", current->word, module, module, mInv(module, current->word));
 
 
-        total += mInv(module, current->word) * current->remainder * module;
-        printf ("Total is  %lld\n", total);
+       total += mInv(module, current->word) * current->remainder * module;
+       printf ("Now total is  %lld\n", total);
     }
 
     total = (total % global_module);
-    printf ("Total is  %lld\n", total);
-    return total;
+    printf ("Total is  %lld\n", total); */
+    return main_equation->remainder % main_equation->word;
 }
 
 void calculateSynchronization (SETI * data)
 {
-    if (!CRT_condition(data))
-    {
-        printf("Nelze dosahnout.\n");
-        return;
-    }
-    CRT_evaluate(data);
+    long long int total = CRT_evaluate(data);
+    total < 0 ? printf("Nelze dosahnout.\n")
+              : printf("Synchronizace za: %lld\n", total);
+
 }
 
 int main (void)
