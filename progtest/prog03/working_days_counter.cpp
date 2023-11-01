@@ -113,9 +113,6 @@ bool isWorkDay ( int y, int m, int d )
     if (!isValidDate(&date)) return false;
 
     int day_of_week = dayOfWeek(date);
-    auto holiday =  !isHoliday(&date);
-    auto workday = day_of_week > 1;
-    bool answer = ( day_of_week > 1 && !isHoliday(&date));
     return ( day_of_week > 1 && !isHoliday(&date));
 }
 
