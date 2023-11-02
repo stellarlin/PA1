@@ -140,8 +140,32 @@ bool isWorkDay ( int y, int m, int d )
 }
 
 
-TResult countDays ( int y1, int m1, int d1,
-                    int y2, int m2, int d2 ) {
+
+void countYears(DATE *start, DATE *end, TResult *result) {
+
+    DATE holidays[] = {DATE(0,1,1), DATE(0,5,1),
+                       DATE (0, 5,8), DATE (0, 7,5),
+                       DATE (0, 7, 6), DATE (0, 9, 28),
+                       DATE (0,10,28), DATE (0,11,17),
+                       DATE (0,12,24), DATE (0, 12,25),
+                       DATE(0,12,26)};
+
+
+    while (start->year != end->year)
+    {
+        result->m_TotalDays += 365 + isLeap(start->year);
+        int dayOf = dayOfWeek(*start);
+        result->m_WorkDays += 260 + (dayOf < 6) + (isLeap(start->year) && dayOf != 6 && dayOf != 5);
+        for (auto & holiday : holidays) result->m_WorkDays -= !isWeekend(start->year,
+                                                                      holiday.month,
+                                                                      holiday.day);
+        start->year++;
+    }
+
+}
+
+TResult countDays (int y1, int m1, int d1,
+                   int y2, int m2, int d2 ) {
     TResult result;
     result.m_TotalDays = -1;
     result.m_WorkDays = -1;
@@ -167,6 +191,7 @@ TResult countDays ( int y1, int m1, int d1,
             if (start.month > 12) {
                 start.month = 1;
                 start.year++;
+                if (start.year != end.year) countYears (&start, &end, &result);
             }
         }
 
@@ -183,19 +208,19 @@ TResult countDays ( int y1, int m1, int d1,
 int main ( int argc, char * argv [] )
 {
   TResult r;
-    /*
-      auto d = dayOfWeek(DATE( 2000,  3,  1));
+/*
+      auto d = dayOfWeek(DATE( 2016,  1,  1));
       printf("It's %d!\n", d);
-     // r = countDays(2004, 01, 01, 2005, 01, 01);
-    //  printf("Total: %d\nWorkDays: %d\n", r.m_TotalDays, r.m_WorkDays);
+      r = countDays(2016, 01, 01, 2016, 12, 31);
+      printf("Total: %d\nWorkDays: %d\n", r.m_TotalDays, r.m_WorkDays);
 
-      d = !isWeekend(2000, 01, 01) + !isWeekend(2000, 05, 01) + !isWeekend(2000, 05, 8)
-              + !isWeekend(2000, 07, 5) +  !isWeekend(2000, 07, 6)  + !isWeekend(2000, 9, 28)
-              + !isWeekend(2000, 10, 28) + !isWeekend(2000, 11, 17) + !isWeekend(2000, 12, 24)
-              + !isWeekend(2000, 12, 25) + !isWeekend(2000, 12, 26);
-      printf("WorkDays: %d\n", 260 - d);
-  */
+         d = !isWeekend(2016, 01, 01) + !isWeekend(2016, 05, 01) + !isWeekend(2016, 05, 8)
+                 + !isWeekend(2016, 07, 5) +  !isWeekend(2016, 07, 6)  + !isWeekend(2016, 9, 28)
+                 + !isWeekend(2016, 10, 28) + !isWeekend(2016, 11, 17) + !isWeekend(2016, 12, 24)
+                 + !isWeekend(2016, 12, 25) + !isWeekend(2016, 12, 26);
+         printf("WorkDays: %d Holidays: %d\n", 260 - d, d);
 
+*/
      assert ( isWorkDay ( 2023, 10, 10 ) );
 
      assert ( ! isWorkDay ( 2023, 11, 11 ) );
