@@ -9,18 +9,18 @@ constexpr int MAP_MAX = 200;
 struct Area
 {
     Area (int X, int Y) : x(X), y(Y) {}
-    bool equal (Area * other) { return x == other->x && y == other->y;}
+    bool equal (Area  other) { return x == other.x && y == other.y;}
     int x;
     int y;
 };
 
 struct Borders
 {
-    Borders(Area * area, int size) : west (area->x >= 1 ? area->x - 1 : area->x ),
-                                     east (area->x < size - 1 ? area->x + 1 : area->x),
-                                     north(area->y >= 1 ? area->y - 1 : area->y),
-                                     south (area->y < size - 1 ? area->y + 1 : area->y) {}
-    int area () const { return (east - west + 1) * (south - north + 1);}
+    Borders(int size) : west (0),
+                                     east (size),
+                                     north(0),
+                                     south (size) {}
+    int area () const { return (east - west) * (south - north);}
     int west;
     int east;
     int north;
@@ -35,16 +35,23 @@ struct Node
 
 struct Queue
 {
-    explicit Queue (Borders borders) :  head (NULL), tail(NULL) {
-        for (int i = borders.north; i <= borders.south; i ++)
-        {
-            for (int j = borders.west; j <= borders.east; j++)
-            {
-                push ({i,j});
-            }
-        }
+    explicit Queue (Area * castle, int size, bool explored [][MAP_MAX]) :  head (NULL), tail(NULL) {
+        addSquares(*castle, size, explored);
         current = head;
     }
+
+    Queue(Queue & other) :  head (NULL), tail(NULL), current(NULL){
+        clone (other.head, other.current);
+    }
+
+    void clone(Node * node, Node * other_current) {
+        if (node == NULL) return;
+
+        push(node->square);
+        if (node == other_current) current = tail;
+        clone(node->next, other_current);
+    }
+    void addSquares (Area a, int size, bool explored [][MAP_MAX]);
     void push (Area a);
     void pop (Node * node);
     Node * head, * tail, * current;
@@ -81,28 +88,85 @@ void Queue::pop(Node *node) {
     pop (head);
 }
 
+void Queue::addSquares(Area a, int size, bool explored[][200]) {
+    for (int i = a.x - (a.x == 0 ? 0 : 1);
+         i <= a.x + (a.x == size - 1 ? 0 : 1)  ; i++)
+    {
+        for(int j = a.y - (a.y == 0 ? 0 : 1);
+            j <= a.y + (a.y == size - 1 ? 0 : 1)  ; j++)
+        {
+            if (!explored[i][j]) push ({i,j}), explored[i][j] = true;
+        }
+    }
+}
+
 
 bool insideKingdom (Borders * kingdom, Area * square)
 {
-    return square->x >= kingdom->north && square->x <= kingdom->south
-    && square->y >= kingdom->west && square->y <= kingdom->east;
+    return square->x >= kingdom->north && square->x < kingdom->south
+    && square->y >= kingdom->west && square->y < kingdom->east;
 }
 
 bool underCastle (Area * square, Area * castle, int altitude[][MAP_MAX])
 {
-    return altitude[castle->x][castle->y] >= altitude [square->x][square->y];
+    return altitude[castle->x][castle->y] > altitude [square->x][square->y];
 }
 
+Borders  changeBorder_y(Borders *kingdom, Area castle, Area wrongSquare) {
+    Borders new_kingdom  = * kingdom;
+    if (wrongSquare.y < castle.y) new_kingdom.west = wrongSquare.y + 1;
+    else new_kingdom.east = wrongSquare.y;
+    return new_kingdom;
+}
+Borders  changeBorder_x(Borders *kingdom, Area castle, Area wrongSquare) {
+    Borders new_kingdom  = *kingdom;
+    if (wrongSquare.x < castle.x) new_kingdom.north = wrongSquare.x + 1;
+    else  new_kingdom.south = wrongSquare.x;
+    return new_kingdom;
+}
+Borders  changeBorders (Borders *kindom, Area castle, Area wrongSquare) {
+    if (wrongSquare.y == castle.y) return changeBorder_x(kindom, castle, wrongSquare);
+    else if (wrongSquare.x == castle.x)  return changeBorder_y(kindom, castle, wrongSquare);
+}
 
+int calculateKingdom_recursion (int altitude[][MAP_MAX], int size, Area castle,
+                                bool explored [][MAP_MAX], Borders Kingdom, Queue * queue)
+{
+    if(queue->current == NULL) return Kingdom.area();
 
+        auto & square = queue->current->square;
+        explored[square.x][square.y] = true;
 
+        if (insideKingdom(&Kingdom, &square))
+        {
+            queue->addSquares(square, size, explored);
+            if (!underCastle(&square, &castle, altitude))
+            {
+               if (square.x != castle.x && square.y != castle.y)
+               {
+                   queue->current = queue->current->next;
+                   Queue queue2 = *queue;
+                   int result1 = calculateKingdom_recursion(altitude, size,castle, explored,
+                                                            changeBorder_x(&Kingdom, castle,
+                                                                           square), queue);
 
-int calculateKingdom (int altitude[][MAP_MAX], Area castle, int size)
+                   int result2 = calculateKingdom_recursion(altitude, size,castle, explored,
+                                                            changeBorder_y(&Kingdom, castle,
+                                                                           square), &queue2);
+                   return result1 >= result2 ? result1 : result2;
+               }
+               else Kingdom = changeBorders (&Kingdom, castle, square);
+            }
+        }
+    queue->current = queue->current->next;
+    return calculateKingdom_recursion(altitude, size,castle, explored, Kingdom, queue);
+}
+int calculateKingdom_definition (int altitude[][MAP_MAX], Area castle, int size)
 {
     bool explored [MAP_MAX][MAP_MAX];
 
     //define borders
-    Borders Kingdom (&castle, size);
+    Borders Kingdom (size);
 
     // define explored area
     for (int i = 0; i < size; i++)
@@ -112,25 +176,9 @@ int calculateKingdom (int altitude[][MAP_MAX], Area castle, int size)
     explored [castle.x] [castle.y] = true;
 
     //define queue
-    Queue queue (Kingdom);
+    Queue queue (&castle, size, explored);
+    return calculateKingdom_recursion(altitude, size,castle, explored, Kingdom, &queue);
 
-    while (queue.current == NULL)
-    {
-        auto & square = queue.current->square;
-        if (square.equal(&castle)) queue.current = queue.current->next;
-
-        if (insideKingdom(&Kingdom, &square))
-        {
-            if (!underCastle(&square, &castle, altitude))
-            {
-                changeBorders(Kingdom, &castle);
-            }
-
-        }
-        explored[square.x][square.y] = true;
-        queue.current = queue.current->next;
-    }
-    return Kingdom.area();
 }
 
 void castleArea ( int altitude[][MAP_MAX], int size, int area[][MAP_MAX] )
@@ -139,7 +187,7 @@ void castleArea ( int altitude[][MAP_MAX], int size, int area[][MAP_MAX] )
     {
         for (int j = 0; j < size; j ++)
         {
-            area [i][j] = calculateKingdom(altitude, Area(i, j), size);
+            area [i][j] = calculateKingdom_definition(altitude, Area(i, j), size);
         }
     }
 }
@@ -147,8 +195,11 @@ void castleArea ( int altitude[][MAP_MAX], int size, int area[][MAP_MAX] )
 #ifndef __PROGTEST__
 bool identicalMap ( const int a[][MAP_MAX], const int b[][MAP_MAX], int n )
 {
-  /* todo */
-  return true;
+  for (int i = 0; i < n; i++) {
+  for (int j = 0; j < n; j ++) if (a [i][j] != b[i][j]) return false;
+  }
+      return true;
+
 }
 int main ( int argc, char * argv [] )
 {
