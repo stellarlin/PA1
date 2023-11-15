@@ -25,40 +25,34 @@ int south;
 
 struct Stack
 {
-    int top = -1;
+    int current = -1;
     int capacity;
-    int * array;
+    int array[200];
 
 
-    bool full () const{return top == capacity - 1;}
-    bool empty () const {return top == -1;}
+    int & top (){return array[current];}
+    bool full () const{return current == capacity - 1;}
+    bool empty () const {return current == -1;}
 
     void push (int item ) {
         if (full()) return;
-        array[++top] = item;
+        array[++current] = item;
     }
     void pop ()
     {
         if (empty()) return;
-        top--;
+        current--;
     }
 
 };
 
-Stack* createStack(int capacity)
+Stack* createStack( Stack * stack, int capacity)
 {
-    Stack * stack = (struct Stack *) malloc (sizeof(Stack));
-    stack->top = -1;
+    stack->current = -1;
     stack->capacity = capacity;
-    stack->array = (int *) malloc (stack->capacity * sizeof(int));
     return stack;
 }
 
-void deleteStack (Stack ** stack)
-{
-    free ((*stack)->array);
-    free (*stack);
-}
 
 
 bool underCastle (Square  square, Square  castle, int altitude[][MAP_MAX])
@@ -105,40 +99,52 @@ void defineCross (int altitude[][MAP_MAX], Square castle,   Borders * kingdom, i
 
 
 
-int maxHist(int row[], Square * castle, Borders * Kingdom)
+int maxHist(int row[], Square * castle, Borders * Kingdom, bool lower_half)
 {
     // Create an empty stack.
-    Stack * stack = createStack(Kingdom->width());
+    Stack stack;
+    createStack(&stack, Kingdom->width());
 
     //----------Initialization-----------------------
     bool capital_found = false; // true when we detected bar
                                 // that consists castle
     int max_area = 0;
     int curr_area;
-    int x = 0;
+    int x = Kingdom->west;
     //----------------------------------------------
     // Run through all bars of given histogram (or row)
 
-    while (x <  Kingdom->width()) {
+
+
+    while (x <=  Kingdom->east) {
         // If this bar is higher than the bar on top stack,
         // push it to stack
-        if (stack->empty()) stack->push(x++);
-        else if (row[stack->top] <= row[x])
-        {
-            if (row[x] == 0 && capital_found) break;
-            if (x == castle->x) capital_found = true;
-            stack->push(x++);
 
+        if (row[x] == 0)
+        {
+           if (capital_found)
+           {
+               if(lower_half) Kingdom->east = x - 1;
+               break;
+           }
+
+           max_area = 0;
+           stack.current = -1;
+            if(lower_half) Kingdom->west = ++x;
         }
 
+        if (stack.empty()|| row[stack.top()] <= row[x])
+        {
+            if (x == castle->x) capital_found = true;
+            stack.push(x++);
+        }
         else {
-            int & top_val = row[stack->array[stack->top]];
-            stack->pop();
+            int & top_val = row[stack.top()];
+            stack.pop();
 
-            if (row[x] == 0 && capital_found) break;
 
-            curr_area = top_val * x;
-            if (!stack->empty()) curr_area = top_val * (x - stack->top - 1);
+            curr_area = (!stack.empty()) ? top_val * (x - stack.top() - 1)
+                    : top_val * (x - Kingdom->west);
             max_area = max(curr_area, max_area);
             if (x == castle->x) capital_found = true;
         }
@@ -146,17 +152,16 @@ int maxHist(int row[], Square * castle, Borders * Kingdom)
 
     // Now pop the remaining bars from stack and calculate
     // area with every popped bar as the smallest bar
-    while (!stack->empty()) {
-        int & top_val = row[stack->array[stack->top]];
-        stack->pop();
-        curr_area = top_val * x;
-        if (!stack->empty())
-            curr_area = top_val * (x - stack->top - 1);
+    while (!stack.empty()) {
 
+        int & top_val = row[stack.top()];
+        stack.pop();
+
+
+        curr_area = (!stack.empty()) ? top_val * (x - stack.top() - 1)
+                                     : top_val * (x - Kingdom->west);
         max_area = max(curr_area, max_area);
     }
-// free memory
-    deleteStack(&stack);
     return max_area;
 }
 
@@ -168,30 +173,35 @@ int calculateKingdom (int altitude[][MAP_MAX], Square castle, int size)
     //define borders
     Borders Kingdom(castle);
     defineCross(altitude, castle, &Kingdom, size);
+    bool lower_half = false;
 
     int histograms [MAP_MAX][MAP_MAX];
 
-    //copy first row
-    for (int i  = 0; i<= Kingdom.width(); i++)
-    {
-        histograms[0][i] = underCastle({i + Kingdom.west, Kingdom.north }, castle, altitude);
-    }
+    //calculate first row
+    for (int x = Kingdom.west; x <= Kingdom.east; x++) histograms[Kingdom.north][x]
+    =  underCastle({x, Kingdom.north}, castle, altitude);
+
     //calculate the area of 1 row
-    int max_area = maxHist(histograms[0], &castle, &Kingdom);
+    int max_area = maxHist(histograms[Kingdom.north], &castle, &Kingdom, lower_half);
+
     //transform rows in as follows, if histograms[i][j]
     // is not zero then histograms[i][j] = histograms[i-1][j] + histograms[i][j].
-    for (int y =  1; y < Kingdom.height(); y++) {
+    for (int y =  Kingdom.north + 1; y <= Kingdom.south; y++) {
 
-        for (int x = 0; x < Kingdom.width(); x++)
+
+        //check if we are allowed to change borders
+        if (!lower_half && y > castle.y) lower_half = true;
+
+        for (int x = Kingdom.west; x <= Kingdom.east; x++)
         {
             // if A[i][j] is 1 then add A[i -1][j]
-            histograms[y][x] =  underCastle({x + Kingdom.west, y + Kingdom.north}, castle, altitude)
+            histograms[y][x] =  underCastle({x, y}, castle, altitude)
                     ? (1 + histograms[y - 1][x]) : 0;
         }
 
         // Update result  using "Largest Rectangular Area in a Histogram"
         // problem solutionl
-        max_area = max(max_area, maxHist(histograms[y], &castle, &Kingdom));
+        max_area = max(max_area, maxHist(histograms[y], &castle, &Kingdom, lower_half));
 
     }
     return max_area;
@@ -210,15 +220,17 @@ void castleArea ( int altitude[][MAP_MAX], int size, int area[][MAP_MAX] )
 
 void printArea ( int area[][MAP_MAX], int size)
 {
+
     for (int i = 0; i < size; i++)
     {
+        printf("{");
         for (int j = 0; j < size; j ++)
         {
-            printf ("%d ", area [i][j]);
+            printf (" %d%c", area [i][j], j == size -1 ? '}' : ',');
         }
-        printf ("\n");
+        printf ("%c\n", i == size -1 ? '}' : ',');
     }
-    printf ("\n");
+    printf ("};\n");
 }
 
 
@@ -234,6 +246,66 @@ bool identicalMap ( const int a[][MAP_MAX], const int b[][MAP_MAX], int n )
 int main ( int argc, char * argv [] )
 {
   static int result[MAP_MAX][MAP_MAX];
+    static int alt0[MAP_MAX][MAP_MAX] = {
+            {864, 127, 191, 680, 522, 25,  318, 392, 717, 53,  419, 419, 6,   145, 503, 347, 38,  275, 67,  455, 675, 976, 596, 655, 686},
+            {246, 649, 860, 119, 999, 824, 335, 126, 367, 367, 0,   392, 686, 393, 461, 739, 164, 881, 97,  309, 736, 796, 700, 12,  863},
+            {155, 39,  191, 751, 46,  877, 349, 47,  89,  468, 46,  913, 156, 524, 633, 523, 524, 25,  561, 269, 487, 653, 433, 720, 102},
+            {95,  456, 899, 795, 820, 114, 302, 211, 306, 405, 257, 183, 754, 304, 625, 575, 350, 890, 731, 874, 523, 254, 751, 549, 168},
+            {20,  388, 821, 454, 108, 923, 549, 916, 822, 696, 89,  937, 998, 300, 595, 403, 558, 130, 157, 214, 755, 84,  565, 998, 815},
+            {791, 521, 422, 542, 422, 942, 915, 810, 763, 369, 270, 686, 270, 187, 861, 318, 628, 150, 316, 928, 745, 719, 838, 875, 228},
+            {53,  983, 665, 970, 981, 480, 761, 854, 254, 656, 277, 196, 923, 439, 311, 292, 62,  350, 914, 601, 211, 232, 229, 361, 900},
+            {157, 458, 971, 348, 685, 199, 401, 668, 864, 371, 1,   697, 484, 856, 303, 492, 485, 852, 415, 924, 163, 59,  338, 865, 973},
+            {939, 76,  557, 168, 789, 457, 678, 599, 428, 26,  285, 980, 427, 305, 196, 150, 659, 245, 986, 515, 549, 479, 0,   753, 246},
+            {276, 268, 306, 615, 134, 631, 906, 562, 189, 75,  704, 998, 753, 303, 427, 131, 940, 759, 910, 246, 955, 60,  905, 201, 46},
+            {772, 102, 877, 124, 855, 124, 752, 475, 430, 719, 609, 61,  626, 524, 602, 53,  228, 601, 158, 531, 380, 289, 824, 139, 199},
+            {70,  446, 611, 327, 647, 657, 451, 101, 535, 927, 308, 659, 679, 784, 441, 399, 745, 502, 377, 269, 457, 430, 497, 58,  588},
+            {381, 790, 229, 205, 929, 428, 627, 727, 391, 306, 375, 48,  757, 828, 935, 684, 137, 594, 715, 921, 35,  466, 666, 890, 843},
+            {288, 347, 625, 785, 757, 565, 518, 547, 794, 723, 828, 574, 702, 555, 965, 8,   282, 366, 117, 463, 301, 801, 600, 248, 517},
+            {521, 635, 983, 539, 525, 179, 827, 224, 804, 965, 333, 370, 483, 880, 164, 559, 60,  91,  261, 968, 56,  270, 602, 422, 387},
+            {65,  724, 541, 665, 324, 410, 538, 959, 745, 430, 837, 924, 609, 61,  81,  574, 395, 451, 58,  627, 967, 617, 40,  410, 230},
+            {8,   467, 852, 962, 241, 592, 28,  317, 133, 45,  641, 895, 936, 601, 640, 366, 438, 917, 975, 851, 998, 902, 246, 801, 960},
+            {226, 768, 929, 266, 179, 511, 626, 998, 364, 588, 239, 308, 968, 909, 441, 14,  550, 688, 302, 503, 328, 20,  941, 597, 347},
+            {793, 595, 249, 391, 396, 561, 969, 517, 842, 235, 696, 354, 861, 46,  70,  802, 637, 378, 770, 546, 171, 136, 97,  859, 790},
+            {600, 539, 810, 894, 137, 158, 39,  732, 407, 430, 481, 969, 400, 998, 811, 987, 46,  517, 201, 444, 587, 3,   81,  965, 125},
+            {628, 136, 614, 725, 347, 404, 677, 887, 215, 571, 24,  725, 610, 108, 132, 393, 941, 453, 145, 939, 617, 484, 337, 486, 685},
+            {781, 74,  40,  863, 391, 518, 843, 528, 132, 568, 875, 888, 597, 114, 103, 521, 490, 828, 131, 599, 313, 876, 892, 118, 373},
+            {832, 87,  858, 521, 574, 895, 303, 0,   288, 518, 391, 806, 361, 271, 290, 281, 499, 178, 230, 613, 634, 751, 104, 814, 235},
+            {55,  479, 111, 947, 598, 837, 131, 37,  695, 653, 963, 942, 308, 963, 230, 178, 355, 36,  539, 978, 678, 172, 477, 857, 402},
+            {91,  843, 154, 547, 657, 741, 602, 137, 852, 901, 87,  41,  385, 124, 736, 390, 88,  31,  698, 403, 261, 228, 758, 650, 119}
+    };
+    static int area0 [MAP_MAX][MAP_MAX] = {
+            { 21, 1, 2, 7, 4, 1, 2, 8, 20, 1, 9, 3, 1, 2, 11, 4, 1, 3, 1, 5, 12, 80, 1, 2, 3 },
+            { 4, 8, 9, 1, 625, 24, 2, 2, 9, 2, 1, 6, 12, 2, 2, 22, 2, 32, 2, 2, 9, 16, 4, 1, 15 },
+            { 3, 1, 3, 5, 1, 24, 6, 1, 2, 15, 2, 64, 1, 7, 12, 1, 4, 1, 6, 1, 2, 11, 1, 13, 1 },
+            { 2, 6, 25, 6, 14, 1, 3, 3, 4, 7, 4, 1, 20, 3, 8, 10, 1, 45, 6, 21, 2, 2, 10, 2, 2 },
+            { 1, 2, 10, 2, 1, 33, 5, 55, 21, 18, 1, 48, 176, 2, 7, 3, 5, 1, 2, 3, 14, 1, 2, 192, 4 },
+            { 10, 4, 1, 4, 2, 84, 30, 7, 8, 2, 5, 6, 2, 1, 36, 2, 12, 2, 4, 70, 8, 11, 24, 16, 1 },
+            { 1, 132, 2, 25, 120, 3, 6, 10, 1, 8, 7, 1, 39, 5, 3, 2, 1, 4, 48, 5, 2, 4, 1, 4, 10 },
+            { 2, 5, 77, 2, 5, 1, 2, 5, 33, 4, 1, 9, 2, 20, 2, 8, 2, 15, 1, 38, 2, 1, 6, 12, 80 },
+            { 66, 1, 4, 1, 10, 2, 6, 8, 4, 1, 8, 63, 4, 3, 2, 3, 14, 1, 160, 2, 9, 7, 1, 8, 3 },
+            { 2, 3, 3, 6, 1, 6, 36, 6, 2, 2, 20, 275, 12, 1, 6, 2, 65, 8, 14, 1, 52, 1, 36, 4, 1 },
+            { 9, 1, 25, 1, 22, 1, 17, 2, 3, 22, 3, 1, 12, 3, 12, 1, 2, 10, 1, 8, 2, 2, 30, 2, 2 },
+            { 1, 4, 4, 3, 5, 16, 2, 1, 5, 70, 1, 6, 6, 24, 2, 4, 24, 7, 2, 1, 5, 3, 6, 1, 8 },
+            { 3, 18, 2, 1, 60, 1, 4, 10, 4, 1, 3, 1, 10, 12, 75, 16, 1, 8, 16, 40, 1, 6, 6, 25, 8 },
+            { 1, 2, 3, 9, 18, 4, 1, 2, 16, 2, 16, 3, 4, 1, 100, 1, 3, 6, 1, 6, 3, 15, 3, 1, 6 },
+            { 7, 4, 150, 3, 8, 1, 20, 1, 14, 102, 1, 2, 3, 20, 2, 8, 1, 2, 3, 132, 1, 2, 9, 4, 2 },
+            { 2, 8, 1, 6, 3, 2, 3, 68, 6, 2, 21, 24, 7, 1, 2, 12, 4, 9, 1, 8, 45, 8, 1, 3, 1 },
+            { 1, 2, 6, 60, 2, 16, 1, 4, 2, 1, 7, 12, 28, 2, 12, 2, 5, 27, 119, 5, 225, 24, 2, 8, 44 },
+            { 3, 11, 36, 2, 1, 3, 9, 253, 2, 8, 1, 2, 90, 20, 2, 1, 6, 8, 1, 4, 4, 1, 48, 2, 1 },
+            { 26, 6, 1, 2, 7, 10, 77, 1, 18, 1, 10, 2, 18, 1, 2, 19, 8, 1, 18, 6, 3, 4, 2, 12, 8 },
+            { 2, 5, 12, 33, 1, 3, 1, 7, 4, 2, 3, 78, 1, 180, 11, 150, 1, 4, 3, 2, 9, 1, 2, 68, 1 },
+            { 4, 3, 4, 7, 2, 4, 6, 22, 2, 8, 1, 8, 12, 1, 4, 3, 75, 2, 2, 30, 9, 6, 3, 3, 6 },
+            { 6, 2, 1, 15, 3, 6, 12, 4, 1, 6, 24, 32, 10, 2, 1, 9, 1, 20, 1, 3, 1, 20, 38, 1, 2 },
+            { 30, 2, 21, 1, 9, 50, 4, 1, 3, 5, 1, 17, 4, 3, 6, 2, 9, 3, 4, 8, 9, 11, 1, 19, 1 },
+            { 1, 4, 1, 60, 10, 8, 2, 2, 10, 9, 66, 10, 1, 40, 2, 1, 4, 2, 10, 125, 8, 1, 2, 15, 4 },
+            { 2, 32, 2, 2, 11, 6, 6, 3, 17, 36, 2, 1, 4, 1, 15, 6, 2, 1, 12, 3, 2, 2, 15, 2, 1 }
+    };
+
+    Square castle(1,1);
+    printf ("Area of (%d, %d) is %d.\n", castle.x, castle.y, calculateKingdom(alt0, castle, 25));
+    castleArea ( alt0, 25, result );
+    printArea(result, 25);
+    //   assert ( identicalMap ( result, area0, 25 ) );
 /*
   static int alt0[MAP_MAX][MAP_MAX] =
   {
