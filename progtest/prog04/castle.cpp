@@ -13,14 +13,18 @@ struct Square
     int y;
 };
 
-struct Borders{
-explicit Borders(Square castle) : west (castle.x), east (castle.x), north(castle.y), south (castle.y) {}
-   int height () const {return  south - north + 1;}
+struct Kingdom{
+explicit Kingdom(Square Castle) : castle(Castle), west (castle.x), east (castle.x), north(castle.y), south (castle.y) {}
+  // int height () const {return  south - north + 1;}
     int width () const { return  east - west + 1;}
-int west;
-int east;
-int north;
-int south;
+
+    Square castle;
+    int west;
+    int east;
+    int north;
+    int south;
+
+
 };
 
 struct Stack
@@ -69,85 +73,98 @@ int max (int a, int b)
 // the histogram represented
 // by histogram. See below article for details.
 
-void defineCross (int altitude[][MAP_MAX], Square castle,   Borders * kingdom, int size)
+void defineCross (int altitude[][MAP_MAX],  Kingdom * kingdom, int size)
 {
     //define North
-    for (int y = castle.y - 1; y >= 0; y--)
+    for (int y = kingdom->castle.y - 1; y >= 0; y--)
     {
-        if (!underCastle({castle.x, y}, castle, altitude)) break;
+        if (!underCastle({kingdom->castle.x, y}, kingdom->castle, altitude)) break;
         kingdom->north--;
     }
     //define South
-    for (int y = castle.y + 1; y <  size; y++)
+    for (int y = kingdom->castle.y + 1; y <  size; y++)
     {
-        if (!underCastle({castle.x, y}, castle, altitude)) break;
+        if (!underCastle({kingdom->castle.x, y}, kingdom->castle, altitude)) break;
         kingdom->south++;
     }
     //define West
-    for (int x = castle.x - 1; x >= 0; x--)
+    for (int x = kingdom->castle.x - 1; x >= 0; x--)
     {
-        if (!underCastle({x, castle.y}, castle, altitude)) break;
+        if (!underCastle({x, kingdom->castle.y}, kingdom->castle, altitude)) break;
         kingdom->west--;
     }
     //define East
-    for (int x = castle.x + 1; x <  size; x++)
+    for (int x = kingdom->castle.x + 1; x <  size; x++)
     {
-        if (!underCastle({x, castle.y}, castle, altitude)) break;
+        if (!underCastle({x, kingdom->castle.y}, kingdom->castle, altitude)) break;
         kingdom->east++;
     }
 }
 
+void defineHistogramLine (int histograms[][MAP_MAX], int altitude[][MAP_MAX],
+                          int line,  Kingdom * kingdom)
+{
+    bool castle_found = false, zeroed = false;
+    // if A[i][j] is 1 then add A[i -1][j]
+    for (int x = kingdom->west; x <= kingdom->east; x++)
+    {
+        histograms[line][x] =  !zeroed && underCastle({x, line}, kingdom->castle, altitude);
+        if (histograms[line][x])
+        {
+            if(line != kingdom->north) histograms[line][x]  += histograms[line - 1][x];
+        }
+        else if (!zeroed && castle_found) zeroed = true;
+
+        castle_found = x >= kingdom->castle.x;
+    }
+}
 
 
-int maxHist(int row[], Square * castle, Borders * Kingdom, bool lower_half)
+int maxHist(int row[],  Kingdom * kingdom, bool lower_half)
 {
     // Create an empty stack.
     Stack stack;
-    createStack(&stack, Kingdom->width());
+    createStack(&stack, kingdom->width());
 
     //----------Initialization-----------------------
-    bool capital_found = false; // true when we detected bar
-                                // that consists castle
     int max_area = 0;
     int curr_area;
-    int x = Kingdom->west;
+    int x = kingdom->west;
     //----------------------------------------------
     // Run through all bars of given histogram (or row)
 
 
 
-    while (x <=  Kingdom->east) {
+    while (x <=  kingdom->east) {
         // If this bar is higher than the bar on top stack,
         // push it to stack
 
         if (row[x] == 0)
         {
-           if (capital_found)
+           if (x>=kingdom->castle.x)
            {
-               if(lower_half) Kingdom->east = x - 1;
+               if(lower_half) kingdom->east = x - 1;
                break;
            }
 
            max_area = 0;
            stack.current = -1;
-            if(lower_half) Kingdom->west = ++x;
+            if(lower_half) kingdom->west = ++x;
         }
 
-        if (stack.empty()|| row[stack.top()] <= row[x])
-        {
-            if (x == castle->x) capital_found = true;
-            stack.push(x++);
-        }
+        if (stack.empty() || row[stack.top()] <= row[x]) stack.push(x++);
         else {
             int & top_val = row[stack.top()];
             stack.pop();
 
-
-            curr_area = (!stack.empty()) ? top_val * (x - stack.top() - 1)
-                    : top_val * (x - Kingdom->west);
-            max_area = max(curr_area, max_area);
-            if (x == castle->x) capital_found = true;
+            if (x>=kingdom->castle.x) {
+                curr_area = (!stack.empty()) ? top_val * (x - stack.top() - 1)
+                                             : top_val * (x - kingdom->west);
+                max_area = max(curr_area, max_area);
+            }
         }
+
+
     }
 
     // Now pop the remaining bars from stack and calculate
@@ -159,50 +176,41 @@ int maxHist(int row[], Square * castle, Borders * Kingdom, bool lower_half)
 
 
         curr_area = (!stack.empty()) ? top_val * (x - stack.top() - 1)
-                                     : top_val * (x - Kingdom->west);
+                                     : top_val * (x - kingdom->west);
         max_area = max(curr_area, max_area);
     }
     return max_area;
 }
 
 
+
 int calculateKingdom (int altitude[][MAP_MAX], Square castle, int size)
 {
     if (!altitude[castle.y][castle.x]) return 1;
 
-    //define borders
-    Borders Kingdom(castle);
-    defineCross(altitude, castle, &Kingdom, size);
+    //define Kingdom
+    Kingdom kingdom(castle);
+    defineCross(altitude,  &kingdom, size);
     bool lower_half = false;
 
     int histograms [MAP_MAX][MAP_MAX];
 
     //calculate first row
-    for (int x = Kingdom.west; x <= Kingdom.east; x++) histograms[Kingdom.north][x]
-    =  underCastle({x, Kingdom.north}, castle, altitude);
 
     //calculate the area of 1 row
-    int max_area = maxHist(histograms[Kingdom.north], &castle, &Kingdom, lower_half);
+    int max_area = 0;
 
     //transform rows in as follows, if histograms[i][j]
     // is not zero then histograms[i][j] = histograms[i-1][j] + histograms[i][j].
-    for (int y =  Kingdom.north + 1; y <= Kingdom.south; y++) {
+    for (int y =  kingdom.north; y <= kingdom.south; y++) {
 
 
-        //check if we are allowed to change borders
+        defineHistogramLine(histograms, altitude, y, &kingdom);
+        //check if we are allowed to change Kingdom
         if (!lower_half && y > castle.y) lower_half = true;
-
-        for (int x = Kingdom.west; x <= Kingdom.east; x++)
-        {
-            // if A[i][j] is 1 then add A[i -1][j]
-            histograms[y][x] =  underCastle({x, y}, castle, altitude)
-                    ? (1 + histograms[y - 1][x]) : 0;
-        }
-
         // Update result  using "Largest Rectangular Area in a Histogram"
         // problem solutionl
-        max_area = max(max_area, maxHist(histograms[y], &castle, &Kingdom, lower_half));
-
+        if (y >= castle.y) max_area = max(max_area, maxHist(histograms[y], &kingdom, lower_half));
     }
     return max_area;
 }
@@ -301,11 +309,11 @@ int main ( int argc, char * argv [] )
             { 2, 32, 2, 2, 11, 6, 6, 3, 17, 36, 2, 1, 4, 1, 15, 6, 2, 1, 12, 3, 2, 2, 15, 2, 1 }
     };
 
-    Square castle(1,1);
-    printf ("Area of (%d, %d) is %d.\n", castle.x, castle.y, calculateKingdom(alt0, castle, 25));
+    Square castle(2,3);
+//    printf ("Area of (%d, %d) is %d.\n", castle.x, castle.y, calculateKingdom(alt0, castle, 25));
     castleArea ( alt0, 25, result );
-    printArea(result, 25);
-    //   assert ( identicalMap ( result, area0, 25 ) );
+    //printArea(result, 25);
+       assert ( identicalMap ( result, area0, 25 ) );
 /*
   static int alt0[MAP_MAX][MAP_MAX] =
   {
@@ -334,8 +342,9 @@ int main ( int argc, char * argv [] )
     { 1, 9, 4, 4 },
     { 1, 2, 1, 12 }
   };
+
   castleArea ( alt1, 4, result );
-  //printArea(result, 4);
+ // printArea(result, 4);
   assert ( identicalMap ( result, area1, 4 ) );
   static int alt2[MAP_MAX][MAP_MAX] =
   {
