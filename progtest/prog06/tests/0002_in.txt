@@ -1,9 +1,9 @@
++ 824637 Vagner Jiri
++ 192837 Taggart John
 + 123456 Vagner Ladislav
 + 987654321 Vanerka Jiri
-+ 824637 Vagner Jiri
 + 8244278 Balik Miroslav
 + 8243245 Vaclavik
-+ 192837 Taggart John
 + 98244212 Vogel Josef
 + 1000001 Vacatko
 + 1000002 Vaclavek
@@ -12,6 +12,7 @@
 + 1000007 Vacek
 + 1000008 Vachek
 + 1000009 Varga
+? 82
 + 123456 Novakova
 + 123456 Novakova Jana
 + 234567 Novakova Jana

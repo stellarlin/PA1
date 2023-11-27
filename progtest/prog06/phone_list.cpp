@@ -4,7 +4,9 @@
 #include <cctype>
 
 #define INITIAL_SIZE 10
-
+#define RESULT_SIZE 10
+#define ALPHABET_SIZE 10
+#define MAX_NUMBER_SIZE 20
 
 // Function to stop the program and show an error message
 int error() {
@@ -15,25 +17,17 @@ int error() {
 struct Contact
 {
     char * name = NULL;
-    char number [21]{};
+    char number [21] = "";
 };
-
-typedef int (*comparator)(int c);
 
 struct trieNode
 {
     Contact * contacts;
     int count;
     int size;
-    bool isWordEnd;
-    trieNode * nextLetter [10];
+    trieNode * nextLetter [ALPHABET_SIZE];
 };
 
-struct phoneBook
-{
-    trieNode * root = NULL;
-    int count = 0;
-};
 
 // Function to create a new trie node
 trieNode * createNode() {
@@ -42,7 +36,6 @@ trieNode * createNode() {
 
     newNode->count = 0;
     newNode->size = INITIAL_SIZE;
-    newNode->isWordEnd = false;
 
     newNode->contacts = (Contact *)malloc (newNode->size * sizeof (Contact));
     if (!newNode->contacts) return NULL;
@@ -74,9 +67,7 @@ Contact copyContact(const Contact *original) {
 
     // Copy the number
     strcpy(copy.number, original->number);
-    if(!addName(original->name, strlen(original->name), &copy.name))
-        return {};
-
+    addName(original->name, strlen(original->name), &copy.name);
     return copy;
 }
 
@@ -121,16 +112,13 @@ void freeTrieNode(trieNode** node) {
     *node = NULL;
 }
 
-void freeBook(phoneBook *book) {
-    if (book == NULL || book->root == NULL) {
+void freeBook(trieNode ** root ) {
+    if (*root == NULL) {
         return;
     }
-
     // Free the trie nodes starting from the root
-    freeTrieNode(&book->root);
-
-    // Set the root to NULL after freeing to avoid accidental access
-    book->root = NULL;
+    freeTrieNode(root);
+    *root = NULL;
 }
 
 enum Result {
@@ -139,8 +127,7 @@ enum Result {
     EXISTS = 2
 };
 
-
-bool readName (Contact * contact, comparator cmp) {
+bool readName (char ** name ) {
     int size = INITIAL_SIZE;
     int index = 0;
     char *buffer = (char *)malloc(size * sizeof(char));
@@ -156,7 +143,7 @@ bool readName (Contact * contact, comparator cmp) {
                 return false;
             }
         }
-        if (!cmp(c) && !isspace(c))
+        if (!isalpha(c) && !isspace(c))
         {
             free(buffer);
             return false;
@@ -177,22 +164,22 @@ bool readName (Contact * contact, comparator cmp) {
         buffer[index++] = c;
     }
 
-    if (! addName(buffer, index, &contact->name) || buffer[index - 1] == ' ') {
+    if (! addName(buffer, index, name) || buffer[index - 1] == ' ') {
         free(buffer);
         return false;
     }
 
     free(buffer);
-    return strlen(contact->name) > 0;
+    return strlen(*name) > 0;
 }
 
 bool readNumber (char * number) {
     int index = 0;
-    char buffer [21];
+    char buffer [MAX_NUMBER_SIZE + 1];
 
     char c;
     while ((c = getchar()) != ' ' && c != EOF) {
-        if (!isdigit(c) || index >= 20) return false;
+        if (!isdigit(c) || index >= MAX_NUMBER_SIZE) return false;
         buffer[index++] = c;
     }
 
@@ -204,13 +191,13 @@ bool readNumber (char * number) {
 }
 
 bool equal(Contact * a, Contact *b) {
-    return !strcmp(a->name, b->name) && !strcmp(a->number, b->number);
+    return strcmp(a->name, b->name) == 0 && strcmp(a->number, b->number) ==0;
 }
 
 
 
-Result insertNumber(Contact contact, phoneBook *book) {
-    trieNode * current = book->root;
+Result insertNumber(Contact contact, trieNode * root ) {
+    trieNode * current = root;
     for (size_t i = 0; i < strlen(contact.number); ++i) {
         int index = contact.number[i] - '0';  // Assuming only lowercase letters; adjust as needed
 
@@ -226,7 +213,6 @@ Result insertNumber(Contact contact, phoneBook *book) {
     }
 
     current->contacts[current->count++] = contact;
-    current->isWordEnd = true;
     if (current->size == current->count) {
         if (!reallocContacts(current)) return ERROR;
     }
@@ -278,13 +264,15 @@ int decodeT9(char letter) {
             case 'Y':
             case 'Z':
                 return 9;
+            default:
+                return 0;
         }
     }
 return 0;
 }
 
-Result insertName(Contact contact, phoneBook *book) {
-    trieNode * current = book->root;
+Result insertName(Contact contact, trieNode * root ) {
+    trieNode * current = root;
     for (size_t i = 0; i < strlen(contact.name); ++i) {
         int index = decodeT9(contact.name[i]);  // Assuming only lowercase letters; adjust as needed
 
@@ -307,21 +295,21 @@ Result insertName(Contact contact, phoneBook *book) {
 
 }
 
-bool insertContact(phoneBook *book) {
+bool insertContact(trieNode * root ) {
     Contact contact;
 
     if(!readNumber(contact.number)) return false;
-    if(!readName(&contact, isalpha))
+    if(!readName(&contact.name))
     {
         freeContact(&contact);
         return false;
     }
 
-    switch (insertNumber(contact , book))
+    switch (insertNumber(contact , root))
     {
         case ACCEPTED:
             printf("OK\n");
-            insertName (copyContact(&contact) , book);
+            insertName (copyContact(&contact) , root);
             break;
         case EXISTS:
             freeContact(&contact);
@@ -334,11 +322,62 @@ bool insertContact(phoneBook *book) {
     return true;
 }
 
-bool searchContact(phoneBook *book) {
+void storeResult (trieNode * current, int * count, Contact * searchResult)
+{
+    if (!current) {
+        return;
+    }
+
+    // Recursively free child nodes
+    for (int i = 0; i < ALPHABET_SIZE; ++i) {
+        storeResult(current->nextLetter[i], count, searchResult);
+    }
+
+        for (int i =0; i < current->count; i++)
+        {
+            bool unique = true;
+            for (int j = 0; j < *count; j++)
+            {
+                unique = !equal(&searchResult[j], &current->contacts[i]);
+                if (!unique) break;
+            }
+            if (unique) {
+                if (*count < RESULT_SIZE)  searchResult[*count] = copyContact(&current->contacts[i]);
+                ++*count;
+            }
+        }
+    }
+
+
+void printResult(Contact * result, int count) {
+    for (int i = 0; i < count; i++)
+    {
+        printf ("%s %s\n", result[i].number, result[i].name);
+    }
+}
+
+bool searchContact(trieNode * root ) {
+   int count = 0;
+   char c;
+   trieNode * current = root;
+    while ((c = getchar()) != '\n' && c != EOF) {
+        if (!isdigit(c)) return false;
+
+        int index = c - '0';
+        if (current) current = current->nextLetter[index];
+    }
+    if (current)
+    {
+        Contact searchResult [RESULT_SIZE];
+        storeResult(current, &count, searchResult);
+        if (count <= RESULT_SIZE) printResult(searchResult, count);
+        for (auto & i : searchResult)freeContact(&i);
+    }
+    printf("Celkem: %d\n", count);
     return true;
 }
 
-bool read_input (phoneBook * phone_book)
+bool read_input (trieNode * root )
 {
     bool error_flag = false;
    while (true)
@@ -347,22 +386,23 @@ bool read_input (phoneBook * phone_book)
        if (scanf(" %c", &sign) != 1  || (sign != '+'  && sign != '?') || getchar() != ' ')break;
 
        switch (sign){
-           case '+': error_flag = !insertContact (phone_book);
+           case '+': error_flag = !insertContact (root);
                         break;
-           case '?': error_flag = !searchContact (phone_book);
+           case '?': error_flag = !searchContact (root);
+                    break;
+           default: error_flag = true;
        }
        if(error_flag) break;
 }
-   return  feof(stdin) && !error_flag;
+   return  feof(stdin)  && !error_flag;
 }
 
 
 
 int main ()
 {
-    phoneBook phone_book;
-    phone_book.root = createNode();
-    if (!read_input(&phone_book)) error();
-    freeBook(&phone_book);
+    trieNode * root = createNode();
+    if (!read_input(root)) error();
+    freeBook(&root);
     return 0;
 }
