@@ -1,0 +1,62 @@
+OK
+OK
+OK
+OK
+OK
+OK
+OK
+123456 Vagner Ladislav
+824637 Vagner Jiri
+8244278 Balik Miroslav
+8243245 Vaclavik
+192837 Taggart John
+Celkem: 5
+123456 Vagner Ladislav
+987654321 Vanerka Jiri
+824637 Vagner Jiri
+8244278 Balik Miroslav
+8243245 Vaclavik
+192837 Taggart John
+Celkem: 6
+Celkem: 0
+OK
+OK
+OK
+OK
+OK
+OK
+OK
+123456 Vagner Ladislav
+824637 Vagner Jiri
+8244278 Balik Miroslav
+8243245 Vaclavik
+192837 Taggart John
+1000006 Vagner Ladislav
+Celkem: 6
+Celkem: 13
+OK
+123456 Vagner Ladislav
+123456 Novakova
+Celkem: 2
+123456 Vagner Ladislav
+123456 Novakova
+Celkem: 2
+Celkem: 0
+1000001 Vacatko
+1000002 Vaclavek
+1000003 Vaclavkova
+1000006 Vagner Ladislav
+1000007 Vacek
+1000008 Vachek
+1000009 Varga
+Celkem: 7
+OK
+OK
+Kontakt jiz existuje.
+Kontakt jiz existuje.
+OK
+123456 Vagner Ladislav
+123456 Novakova
+123456 Novakova Jana
+123456 novakova Jana
+Celkem: 4
