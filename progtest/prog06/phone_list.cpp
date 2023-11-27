@@ -56,15 +56,15 @@ trieNode * createNode() {
 }
 
 
-bool addName (char * name, int size, Contact * contact)
+bool addName (char * newName, int size,  char ** contactName)
 {
     // Allocate exactly the amount of memory needed
-    contact->name = (char *)malloc(size + 1 * sizeof(char));
-    if (!contact->name) return false;
+    *contactName = (char *)malloc(size + 1 * sizeof(char));
+    if (!*contactName ) return false;
 
     // Copy the content from the buffer to the final line
-    strncpy(contact->name, name, size);
-    contact->name[size] = '\0';
+    strncpy(*contactName , newName, size);
+    (*contactName)[size] = '\0';
 
     return true;
 }
@@ -74,9 +74,8 @@ Contact copyContact(const Contact *original) {
 
     // Copy the number
     strcpy(copy.number, original->number);
-    if(!addName(original->name, strlen(original->name), &copy))
+    if(!addName(original->name, strlen(original->name), &copy.name))
         return {};
-    // Allocate memory for the name and copy it
 
     return copy;
 }
@@ -151,9 +150,17 @@ bool readName (Contact * contact, comparator cmp) {
     char c;
     while ((c = getchar()) != '\n' && c != EOF) {
         if (c == ' ') {
-            if (index == 0 || buffer[index - 1] == ' ' ) return false;
+            if (index == 0 || buffer[index - 1] == ' ' )
+            {
+                free(buffer);
+                return false;
+            }
         }
-        if (!cmp(c) && !isspace(c)) return false;
+        if (!cmp(c) && !isspace(c))
+        {
+            free(buffer);
+            return false;
+        }
 
         // Reallocate memory if needed
         if (index == size - 1) {
@@ -170,11 +177,12 @@ bool readName (Contact * contact, comparator cmp) {
         buffer[index++] = c;
     }
 
-    if (! addName(buffer, index, contact) || buffer[index - 1] == ' ') {
+    if (! addName(buffer, index, &contact->name) || buffer[index - 1] == ' ') {
         free(buffer);
         return false;
     }
 
+    free(buffer);
     return strlen(contact->name) > 0;
 }
 
@@ -203,7 +211,7 @@ bool equal(Contact * a, Contact *b) {
 
 Result insertNumber(Contact contact, phoneBook *book) {
     trieNode * current = book->root;
-    for (int i = 0; i < strlen(contact.number); ++i) {
+    for (size_t i = 0; i < strlen(contact.number); ++i) {
         int index = contact.number[i] - '0';  // Assuming only lowercase letters; adjust as needed
 
         if (!current->nextLetter[index]) {
@@ -277,7 +285,7 @@ return 0;
 
 Result insertName(Contact contact, phoneBook *book) {
     trieNode * current = book->root;
-    for (int i = 0; i < strlen(contact.name); ++i) {
+    for (size_t i = 0; i < strlen(contact.name); ++i) {
         int index = decodeT9(contact.name[i]);  // Assuming only lowercase letters; adjust as needed
 
         if (current->nextLetter[index] == NULL) {
@@ -309,20 +317,20 @@ bool insertContact(phoneBook *book) {
         return false;
     }
 
-    switch (insertNumber(copyContact(&contact) , book))
+    switch (insertNumber(contact , book))
     {
         case ACCEPTED:
             printf("OK\n");
             insertName (copyContact(&contact) , book);
             break;
         case EXISTS:
+            freeContact(&contact);
             printf("Kontakt jiz existuje.\n");
             break;
         case ERROR:
             freeContact(&contact);
             return false;
     }
-    freeContact(&contact);
     return true;
 }
 
