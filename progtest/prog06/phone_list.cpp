@@ -55,6 +55,33 @@ trieNode * createNode() {
     return newNode;
 }
 
+
+bool addName (char * name, int size, Contact * contact)
+{
+    // Allocate exactly the amount of memory needed
+    contact->name = (char *)malloc(size + 1 * sizeof(char));
+    if (!contact->name) return false;
+
+    // Copy the content from the buffer to the final line
+    strncpy(contact->name, name, size);
+    contact->name[size] = '\0';
+
+    return true;
+}
+
+Contact copyContact(const Contact *original) {
+    Contact copy;
+
+    // Copy the number
+    strcpy(copy.number, original->number);
+    if(!addName(original->name, strlen(original->name), &copy))
+        return {};
+    // Allocate memory for the name and copy it
+
+    return copy;
+}
+
+
 trieNode * reallocContacts (trieNode * node)
 {
     node->size *= 2;
@@ -112,20 +139,6 @@ enum Result {
     ERROR = 1,
     EXISTS = 2
 };
-
-
-bool addName (char * name, int size, Contact * contact)
-{
-    // Allocate exactly the amount of memory needed
-    contact->name = (char *)malloc(size + 1 * sizeof(char));
-    if (!contact->name) return false;
-
-    // Copy the content from the buffer to the final line
-    strncpy(contact->name, name, size);
-    contact->name[size] = '\0';
-
-    return true;
-}
 
 
 bool readName (Contact * contact, comparator cmp) {
@@ -186,17 +199,6 @@ bool equal(Contact * a, Contact *b) {
     return !strcmp(a->name, b->name) && !strcmp(a->number, b->number);
 }
 
-Contact copyContact(const Contact *original) {
-    Contact copy;
-
-    // Copy the number
-    strcpy(copy.number, original->number);
-    if(!addName(original->name, strlen(original->name), &copy))
-        return {};
-    // Allocate memory for the name and copy it
-
-    return copy;
-}
 
 
 Result insertNumber(Contact contact, phoneBook *book) {
