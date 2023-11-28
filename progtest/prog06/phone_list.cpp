@@ -336,7 +336,7 @@ void storeResult (trieNode * current, int * count, Contact * searchResult)
         for (int i =0; i < current->count; i++)
         {
             bool unique = true;
-            for (int j = 0; j < *count; j++)
+            for (int j = 0; j < (*count >= RESULT_SIZE ? RESULT_SIZE : *count); j++)
             {
                 unique = !equal(&searchResult[j], &current->contacts[i]);
                 if (!unique) break;
