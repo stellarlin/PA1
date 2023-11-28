@@ -135,7 +135,7 @@ bool addUnique (ContactContainer * src, ContactContainer * dest)
 {
     for (int i = 0; i < src->count; i++)
     {
-        if (existsInContainer(dest, &src->data[i])) {
+        if (!existsInContainer(dest, &src->data[i])) {
             if (!insertContactContainer(dest, &src->data[i])) return false;
         }
     }
@@ -379,7 +379,7 @@ bool storeResult (trieNode * current, ContactContainer * searchResult)
     }
 
     if(!addContainer (&current->ByNumber, searchResult)) return false;
-    if(!addUnique(&current->ByNumber, searchResult)) return false;
+    if(!addUnique(&current->ByName, searchResult)) return false;
 
     return true;
 }
