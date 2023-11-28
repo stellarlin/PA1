@@ -20,11 +20,28 @@ struct Contact
     char number [21] = "";
 };
 
-struct trieNode
+struct ContactContainer
 {
-    Contact * contacts;
+    Contact * data;
     int count;
     int size;
+};
+
+bool initContacts (ContactContainer * container)
+{
+    container->count = 0;
+    container->size = INITIAL_SIZE;
+
+    container->data = (Contact *)malloc (container->size * sizeof (Contact));
+    if (!container->data) return false;
+
+    return true;
+}
+
+struct trieNode
+{
+    ContactContainer  ByNumber;
+    ContactContainer  ByName;
     trieNode * nextLetter [ALPHABET_SIZE];
 };
 
@@ -34,18 +51,20 @@ trieNode * createNode() {
     auto * newNode = (trieNode *)malloc(sizeof(trieNode));
     if (!newNode) return NULL;
 
-    newNode->count = 0;
-    newNode->size = INITIAL_SIZE;
-
-    newNode->contacts = (Contact *)malloc (newNode->size * sizeof (Contact));
-    if (!newNode->contacts) return NULL;
-
-
+    if (!initContacts(&newNode->ByName) || !initContacts(&newNode->ByNumber))
+    {
+        free (newNode);
+        return NULL;
+    }
 
     for (int i = 0; i < 10; ++i) {
         newNode->nextLetter[i] = NULL;
     }
     return newNode;
+}
+
+bool equal(Contact * a, Contact *b) {
+    return strcmp(a->name, b->name) == 0 && strcmp(a->number, b->number) ==0;
 }
 
 
@@ -72,16 +91,55 @@ Contact copyContact(const Contact *original) {
 }
 
 
-trieNode * reallocContacts (trieNode * node)
+ContactContainer * reallocContainer  (ContactContainer * container)
 {
-    node->size *= 2;
-    auto * newContracts = (Contact *)realloc(node->contacts, node->size * sizeof(Contact));
+    container->size *= 2;
+    auto * newContracts = (Contact *)realloc(container->data, container->size * sizeof(Contact));
 
     if (!newContracts) {
         return NULL;
     }
-    node->contacts = newContracts;
-    return node;
+    container->data = newContracts;
+    return container;
+}
+
+bool insertContactContainer (ContactContainer * container, Contact * contact)
+{
+    container->data[container->count++] = copyContact(contact);
+    if (container->size == container->count) {
+        if (!reallocContainer(container)) return false;
+    }
+    return true;
+}
+bool addContainer (ContactContainer * src, ContactContainer * dest)
+{
+    for (int i = 0; i < src->count; i++)
+    {
+        if (!insertContactContainer(dest, &src->data[i])) return false;
+    }
+    return true;
+}
+
+
+
+bool existsInContainer (ContactContainer * container, Contact * contact)
+{
+    for (int i = 0; i < container->count; i++)
+    {
+        if (equal(&container->data[i], contact)) return true;
+    }
+    return false;
+}
+
+bool addUnique (ContactContainer * src, ContactContainer * dest)
+{
+    for (int i = 0; i < src->count; i++)
+    {
+        if (existsInContainer(dest, &src->data[i])) {
+            if (!insertContactContainer(dest, &src->data[i])) return false;
+        }
+    }
+    return true;
 }
 
 
@@ -93,7 +151,16 @@ void freeContact( Contact *contact) {
         contact->name = NULL;  // Set to NULL to avoid double freeing
     }
 }
-void freeTrieNode(trieNode** node) {
+
+
+void freeContainer (ContactContainer * container)
+{
+    for (int i = 0; i < container->count; i++) freeContact(&container->data[i]);
+    // Free the contacts array
+    free(container->data);
+}
+
+void freeTrieNode(trieNode ** node) {
     if (*node == NULL) {
         return;
     }
@@ -103,9 +170,8 @@ void freeTrieNode(trieNode** node) {
         freeTrieNode(&(*node)->nextLetter[i]);
     }
 
-    for (int i = 0; i < (*node)->count; i++) freeContact(&(*node)->contacts[i]);
-    // Free the contacts array
-    free((*node)->contacts);
+    freeContainer(&(*node)->ByName);
+    freeContainer(&(*node)->ByNumber);
 
     // Free the node itself
     free(*node);
@@ -190,16 +256,11 @@ bool readNumber (char * number) {
     return strlen(number) > 0;
 }
 
-bool equal(Contact * a, Contact *b) {
-    return strcmp(a->name, b->name) == 0 && strcmp(a->number, b->number) ==0;
-}
 
-
-
-Result insertNumber(Contact contact, trieNode * root ) {
+Result insertNumber(Contact * contact, trieNode * root ) {
     trieNode * current = root;
-    for (size_t i = 0; i < strlen(contact.number); ++i) {
-        int index = contact.number[i] - '0';  // Assuming only lowercase letters; adjust as needed
+    for (size_t i = 0; i < strlen(contact->number); ++i) {
+        int index = contact->number[i] - '0';  // Assuming only lowercase letters; adjust as needed
 
         if (!current->nextLetter[index]) {
             current->nextLetter[index] = createNode();
@@ -207,17 +268,10 @@ Result insertNumber(Contact contact, trieNode * root ) {
         }
         current = current->nextLetter[index];
     }
-    for (int i = 0; i < current->count; i++)
-    {
-        if (equal(&current->contacts[i], &contact)) return EXISTS;
-    }
 
-    current->contacts[current->count++] = contact;
-    if (current->size == current->count) {
-        if (!reallocContacts(current)) return ERROR;
-    }
+    if (existsInContainer(&current->ByNumber, contact)) return EXISTS;
 
-    return ACCEPTED;
+    return insertContactContainer(&current->ByNumber, contact) ? ACCEPTED : ERROR;
 }
 
 int decodeT9(char letter) {
@@ -271,28 +325,19 @@ int decodeT9(char letter) {
 return 0;
 }
 
-Result insertName(Contact contact, trieNode * root ) {
+Result insertName(Contact * contact, trieNode * root ) {
     trieNode * current = root;
-    for (size_t i = 0; i < strlen(contact.name); ++i) {
-        int index = decodeT9(contact.name[i]);  // Assuming only lowercase letters; adjust as needed
+    for (size_t i = 0; i < strlen(contact->name); ++i) {
+        int index = decodeT9(contact->name[i]);  // Assuming only lowercase letters; adjust as needed
 
         if (current->nextLetter[index] == NULL) {
             current->nextLetter[index] = createNode();
         }
         current = current->nextLetter[index];
     }
-    for (int i = 0; i < current->count; i++)
-    {
-        if (equal(&current->contacts[i], &contact)) return EXISTS;
-    }
+    if (existsInContainer(&current->ByName, contact)) return EXISTS;
 
-    current->contacts[current->count++] = contact;
-    if (current->size == current->count)
-    {
-        if(!reallocContacts(current)) return ERROR;
-    }
-    return ACCEPTED;
-
+    return insertContactContainer(&current->ByName, contact) ? ACCEPTED : ERROR;
 }
 
 bool insertContact(trieNode * root ) {
@@ -305,11 +350,11 @@ bool insertContact(trieNode * root ) {
         return false;
     }
 
-    switch (insertNumber(contact , root))
+    switch (insertNumber(&contact , root))
     {
         case ACCEPTED:
             printf("OK\n");
-            insertName (copyContact(&contact) , root);
+            insertName (&contact , root);
             break;
         case EXISTS:
             freeContact(&contact);
@@ -322,42 +367,39 @@ bool insertContact(trieNode * root ) {
     return true;
 }
 
-void storeResult (trieNode * current, int * count, Contact * searchResult)
+bool storeResult (trieNode * current, ContactContainer * searchResult)
 {
     if (!current) {
-        return;
+        return true;
     }
 
     // Recursively free child nodes
     for (int i = 0; i < ALPHABET_SIZE; ++i) {
-        storeResult(current->nextLetter[i], count, searchResult);
+        storeResult(current->nextLetter[i],  searchResult);
     }
 
-        for (int i =0; i < current->count; i++)
-        {
-            bool unique = true;
-            for (int j = 0; j < (*count >= RESULT_SIZE ? RESULT_SIZE : *count); j++)
-            {
-                unique = !equal(&searchResult[j], &current->contacts[i]);
-                if (!unique) break;
-            }
-            if (unique) {
-                if (*count < RESULT_SIZE)  searchResult[*count] = copyContact(&current->contacts[i]);
-                ++*count;
-            }
+    if(!addContainer (&current->ByNumber, searchResult)) return false;
+    if(!addUnique(&current->ByNumber, searchResult)) return false;
+
+    return true;
+}
+
+
+void printResult(ContactContainer * result) {
+    if (result->count <= RESULT_SIZE) {
+        for (int i = 0; i < result->count; i++) {
+            printf("%s %s\n", result->data[i].number, result->data[i].name);
         }
     }
 
+    printf("Celkem: %d\n", result->count);
 
-void printResult(Contact * result, int count) {
-    for (int i = 0; i < count; i++)
-    {
-        printf ("%s %s\n", result[i].number, result[i].name);
-    }
 }
 
 bool searchContact(trieNode * root ) {
-   int count = 0;
+   ContactContainer searchResult;
+   if(!initContacts(&searchResult)) return false;
+
    char c;
    trieNode * current = root;
     while ((c = getchar()) != '\n' && c != EOF) {
@@ -368,12 +410,14 @@ bool searchContact(trieNode * root ) {
     }
     if (current)
     {
-        Contact searchResult [RESULT_SIZE];
-        storeResult(current, &count, searchResult);
-        if (count <= RESULT_SIZE) printResult(searchResult, count);
-        for (auto & i : searchResult)freeContact(&i);
+        if(!storeResult(current, &searchResult))
+        {
+            freeContainer(&searchResult);
+            return false;
+        }
+        printResult(&searchResult);
+        freeContainer(&searchResult);
     }
-    printf("Celkem: %d\n", count);
     return true;
 }
 
