@@ -12,7 +12,7 @@
 + 1000007 Vacek
 + 1000008 Vachek
 + 1000009 Varga
-? 82
+? 37
 + 123456 Novakova
 + 123456 Novakova Jana
 + 234567 Novakova Jana
