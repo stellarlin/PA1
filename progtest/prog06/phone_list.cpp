@@ -8,16 +8,10 @@
 #define ALPHABET_SIZE 10
 #define MAX_NUMBER_SIZE 20
 
-// Function to stop the program and show an error message
-int error() {
-    printf("Nespravny vstup.\n");
-    return 0;
-}
-
 struct Contact
 {
     char * name = NULL;
-    char number [21] = "";
+    char number [MAX_NUMBER_SIZE + 1] = "";
 };
 
 struct ContactContainer
@@ -68,7 +62,7 @@ bool equal(Contact * a, Contact *b) {
 }
 
 
-bool addName (char * newName, int size,  char ** contactName)
+bool addName (char * newName, size_t size,  char ** contactName)
 {
     // Allocate exactly the amount of memory needed
     *contactName = (char *)malloc(size + 1 * sizeof(char));
@@ -86,6 +80,7 @@ Contact copyContact(const Contact *original) {
 
     // Copy the number
     strcpy(copy.number, original->number);
+    copy.number[sizeof(copy.number) - 1] = '\0';  // Ensure null termination
     addName(original->name, strlen(original->name), &copy.name);
     return copy;
 }
@@ -111,16 +106,6 @@ bool insertContactContainer (ContactContainer * container, Contact * contact)
     }
     return true;
 }
-bool addContainer (ContactContainer * src, ContactContainer * dest)
-{
-    for (int i = 0; i < src->count; i++)
-    {
-        if (!insertContactContainer(dest, &src->data[i])) return false;
-    }
-    return true;
-}
-
-
 
 bool existsInContainer (ContactContainer * container, Contact * contact)
 {
@@ -241,16 +226,23 @@ bool readName (char ** name ) {
 
 bool readNumber (char * number) {
     int index = 0;
-    char buffer [MAX_NUMBER_SIZE + 1];
+    char buffer [MAX_NUMBER_SIZE + 1] = "";
 
     char c;
-    while ((c = getchar()) != ' ' && c != EOF) {
+    while ((c = getchar()) != ' ' &&  c != '\n' && c != EOF) {
         if (!isdigit(c) || index >= MAX_NUMBER_SIZE) return false;
         buffer[index++] = c;
     }
 
-    // Copy the content from the buffer to the final line
-    strncpy(number, buffer, index);
+    if(c == '\n')
+    {
+        ungetc(c,stdin);
+        return false;
+    }
+
+     // Copy the content from the buffer to the final line
+     strncpy(number, buffer, index + 1);
+
     number[index] = '\0';
 
     return strlen(number) > 0;
@@ -357,13 +349,13 @@ bool insertContact(trieNode * root ) {
             insertName (&contact , root);
             break;
         case EXISTS:
-            freeContact(&contact);
             printf("Kontakt jiz existuje.\n");
             break;
         case ERROR:
             freeContact(&contact);
             return false;
     }
+    freeContact(&contact);
     return true;
 }
 
@@ -378,7 +370,7 @@ bool storeResult (trieNode * current, ContactContainer * searchResult)
         storeResult(current->nextLetter[i],  searchResult);
     }
 
-    if(!addContainer (&current->ByNumber, searchResult)) return false;
+    if(!addUnique(&current->ByNumber, searchResult)) return false;
     if(!addUnique(&current->ByName, searchResult)) return false;
 
     return true;
@@ -403,7 +395,11 @@ bool searchContact(trieNode * root ) {
    char c;
    trieNode * current = root;
     while ((c = getchar()) != '\n' && c != EOF) {
-        if (!isdigit(c)) return false;
+        if (!isdigit(c))
+        {
+            freeContainer(&searchResult);
+            return false;
+        }
 
         int index = c - '0';
         if (current) current = current->nextLetter[index];
@@ -415,30 +411,40 @@ bool searchContact(trieNode * root ) {
             freeContainer(&searchResult);
             return false;
         }
-        printResult(&searchResult);
-        freeContainer(&searchResult);
     }
+    printResult(&searchResult);
+    freeContainer(&searchResult);
     return true;
 }
 
-bool read_input (trieNode * root )
+void read_input (trieNode * root )
 {
-    bool error_flag = false;
-   while (true)
-   {
-       char sign;
-       if (scanf(" %c", &sign) != 1  || (sign != '+'  && sign != '?') || getchar() != ' ')break;
+    char c;
+   while (true) {
+       char sign = getchar();
 
-       switch (sign){
-           case '+': error_flag = !insertContact (root);
-                        break;
-           case '?': error_flag = !searchContact (root);
-                    break;
-           default: error_flag = true;
+       if (sign == EOF) break;
+
+       bool error_flag = ((sign != '+' && sign != '?') || (c = getchar()) != ' ');
+       if (!error_flag) {
+           switch (sign) {
+               case '+':
+                   error_flag = !insertContact(root);
+                   break;
+               case '?':
+                   error_flag = !searchContact(root);
+                   break;
+               default:
+                   error_flag = true;
+           }
        }
-       if(error_flag) break;
-}
-   return  feof(stdin)  && !error_flag;
+       if (error_flag)
+       {
+           printf("Nespravny vstup.\n");
+           if (sign != '+' && sign != '?') c = sign;
+           while (c != '\n' && c != EOF) {c = getchar();}
+       }
+   }
 }
 
 
@@ -446,7 +452,7 @@ bool read_input (trieNode * root )
 int main ()
 {
     trieNode * root = createNode();
-    if (!read_input(root)) error();
+    read_input(root);
     freeBook(&root);
     return 0;
 }
