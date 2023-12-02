@@ -1,0 +1,17 @@
++ 2023-11-10 10 Short_review
++ 2023-11-10 53 Long_review
++ 2023-11-10 15 Negative_review
++ 2023-11-11 45 Some_text
++ 2023-11-16 42 Useless_comment
++ 2023-11-16 98 Fake_review
+? 100
+? 42
+? 57
+? 140
+? 200
+# 2000
+# 10
++ 2023-11-16 15 Updated_review
++ 2023-11-17 1000 Sponsored
+? 200
+# 2000

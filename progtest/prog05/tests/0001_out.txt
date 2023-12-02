@@ -1,0 +1,9 @@
+Recenze:
+2023-11-11 - 2023-11-12: 30
+  10: Short_review
+  10: Short_review
+  10: Short_review
+2023-11-15 - 2023-11-16: 308
+  8: Short_review
+  100: Short_review
+  200: Short_review

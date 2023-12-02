@@ -1,0 +1,24 @@
+Recenze:
+2023-11-10 - 2023-11-10: 78
+  10: Short_review
+  53: Long_review
+  15: Negative_review
+2023-11-11 - 2023-11-11: 45
+  45: Some_text
+2023-11-11 - 2023-11-11: 45
+  45: Some_text
+2023-11-16 - 2023-11-16: 140
+  42: Useless_comment
+  98: Fake_review
+2023-11-11 - 2023-11-16: 185
+  45: Some_text
+  42: Useless_comment
+  98: Fake_review
+2023-11-10 - 2023-11-16: 263
+2023-11-11 - 2023-11-11: 45
+2023-11-11 - 2023-11-16: 200
+  45: Some_text
+  42: Useless_comment
+  98: Fake_review
+  15: Updated_review
+2023-11-10 - 2023-11-17: 1278
