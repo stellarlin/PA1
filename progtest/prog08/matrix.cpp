@@ -26,10 +26,10 @@ typedef struct TSparseMatrix {
 
 
 #endif /* __PROGTEST__ */
-
+//---------------------------------------------------------------------------------------------------------------------//
 TROWCOL * initRowCol ( int idx)
 {
-    auto rowCol = (TROWCOL *) malloc (sizeof (TROWCOL));
+    auto * rowCol = (TROWCOL *) malloc (sizeof (TROWCOL));
     if(!rowCol) return rowCol;
 
     rowCol->m_Cells = nullptr;
@@ -39,192 +39,211 @@ TROWCOL * initRowCol ( int idx)
     return rowCol;
 }
 
-void initMatrix(TSPARSEMATRIX *m) {
-    m->m_Rows = nullptr;
-    m->m_Cols = nullptr;
-}
-
-TCELL * initCell(int row, int col, int data) {
-  auto cell = (TCELL * ) malloc(sizeof(TCELL));
-  if (!cell) return nullptr;
-  cell->m_Right = nullptr;
-  cell->m_Down = nullptr;
-  cell->m_Row = row;
-  cell->m_Col = col;
-  cell->m_Data = data;
-  return cell;
-}
-
-TROWCOL * findInsert (TROWCOL ** root, int idx)
+TROWCOL * insertRowCol (TROWCOL ** root, int idx)
 {
     TROWCOL * current = *root;
     TROWCOL * prev = nullptr;
 
-    if(!current)
-    {
-        *root = initRowCol(idx);
-        return *root;
-    }
-    while (current && current->m_Idx != idx)
-    {
-         if (current->m_Idx > idx ) {
-
-            auto newRow = initRowCol(idx);
-            newRow->m_Next = current;
-            prev ? prev->m_Next : *root = newRow;
-            return newRow;
+    if(current) {
+        while (current && (current->m_Idx <= idx)) {
+            if (current->m_Idx == idx) return current;
+            prev = current;
+            current = current->m_Next;
         }
-
-        prev = current;
-        current =  current->m_Next;
     }
 
-    if (!current) {
-        prev->m_Next = initRowCol(idx);
-        return prev->m_Next;
-    }
+    auto * newRowCol = initRowCol(idx);
+    //if(!newRowCol) return nullptr;
 
-    return current;
-}
+    newRowCol->m_Next = current;
+    ( prev ? prev->m_Next : *root) = newRowCol;
 
-
-TCELL * insertRowCell(TROWCOL * root, int row, int col, int data)
-{
-    TCELL * current = root->m_Cells;
-    TCELL * prev = nullptr;
-    if (!current)
-    {
-        root->m_Cells = initCell(row,col, data);
-        return root->m_Cells;
-    }
-
-    while (current)
-    {
-        if (current->m_Col == col)
-        {
-            current->m_Data = data;
-            return current;
-        }
-
-        else if (current->m_Col > col ) {
-            auto cell = initCell(row,col,data);
-            if(!cell) return cell;
-
-            cell->m_Right = current->m_Right;
-            if(prev) prev->m_Right = cell;
-            return cell;
-        }
-
-        else if (!current->m_Right) {
-            current->m_Right = initCell(row,col,data);
-            return current->m_Right;
-        }
-
-        prev = current;
-        current =  current->m_Right;
-    }
-
-    return nullptr;
-}
-
-void  insertColCell(TROWCOL * col, TCELL * cell, int row)
-{
-    TCELL * current = col->m_Cells;
-    TCELL * prev = nullptr;
-    if (!current)
-    {
-        col->m_Cells = cell;
-        return;
-    }
-
-    while (current)
-    {
-        if (current->m_Row == row) return;
-
-        else if (current->m_Row > row ) {
-            cell->m_Down = current->m_Down;
-            if(prev) prev->m_Down = cell;
-            return;
-        }
-
-        else if (!current->m_Down) {
-            current->m_Down = cell;
-            return;
-        }
-        prev = current;
-        current =  current->m_Down;
-    }
-}
-
-
-
-
-void addSetCell(TSPARSEMATRIX *m,
-                int rowIdx,
-                int colIdx,
-                int data) {
-
-    if(colIdx < 0 || rowIdx < 0) return;
-    TROWCOL * currentRow = findInsert(&m->m_Rows, rowIdx);
-    TROWCOL * currentColumn = findInsert(&m->m_Cols, colIdx);
-    TCELL * cell = insertRowCell(currentRow, rowIdx, colIdx, data);
-    insertColCell(currentColumn, cell, rowIdx);
-
+    return newRowCol;
 }
 
 
 bool findRowCol (TROWCOL ** current, TROWCOL ** prev, int idx)
 {
-    while (*current && (*current)->m_Idx <= idx) {
+    if(!*current) return false;
+    while (*current   && (*current)->m_Idx <= idx) {
         if ((*current)->m_Idx == idx) {
             return true;
         }
-
         *prev = *current;
         *current = (*current)->m_Next;
     }
     return false;
 }
 
-TCELL *removeColCell(TROWCOL *col, int row) {
+//---------------------------------------------------------------------------------------------------------------------//
 
+TCELL * initCell(int row, int col, int data) {
+    auto cell = (TCELL * ) malloc(sizeof(TCELL));
+    if (!cell) return nullptr;
+    cell->m_Right = nullptr;
+    cell->m_Down = nullptr;
+    cell->m_Row = row;
+    cell->m_Col = col;
+    cell->m_Data = data;
+    return cell;
+}
+
+
+TCELL * insertCellRow(TROWCOL * row,  int rowIdx, int colIdx, int data)
+{
+    TCELL * current = row->m_Cells;
+    TCELL * prev = nullptr;
+
+    if(current){
+    while (current && current->m_Col <= colIdx)
+    {
+        if (current->m_Col == colIdx)
+        {
+            current->m_Data = data;
+            return current;
+        }
+        prev = current;
+        current =  current->m_Right;
+    }}
+
+    auto cell = initCell(rowIdx,colIdx,data);
+    if(!cell) return cell;
+
+    cell->m_Right = current;
+    (prev ? prev->m_Right : row->m_Cells) = cell;
+
+    return cell;
+}
+
+void  insertCellCol(TROWCOL * col, TCELL * cell, int rowIdx)
+{
 
     TCELL * current = col->m_Cells;
     TCELL * prev = nullptr;
-    while (current)
-    {
-        if (current->m_Row == row)
-        {
-            prev ? prev->m_Down : col->m_Cells = current->m_Down;
-            return current;
+
+    if(current) {
+        while (current && current->m_Col <= rowIdx) {
+            if (current->m_Col == rowIdx) return;
+
+            prev = current;
+            current = current->m_Down;
         }
-        prev = current;
-        current =  current->m_Down;
     }
-    return nullptr;
+    cell->m_Down = current;
+    (prev ? prev->m_Down : col->m_Cells) = cell;
 }
 
-TCELL * removeRowCell(TROWCOL *row, int col) {
+
+
+TCELL * removeCellRow(TROWCOL *row, int rowIdx,  int colIdx){
     TCELL * current = row->m_Cells;
     TCELL * prev = nullptr;
-    while (current)
-    {
-        if (current->m_Col == col)
-        {
-            prev ? prev->m_Right : row->m_Cells = current->m_Right;
-            return current;
-        }
+    if(!current) return nullptr;
+
+    while (current && current->m_Col != colIdx && current->m_Row != rowIdx){
+        prev = current;
+        current =  current->m_Right;
+    }
+    if (current) (prev ? prev->m_Right : row->m_Cells) = current->m_Right;
+    return current;
+}
+
+TCELL *removeCellCol(TROWCOL *col, int rowIdx,  int colIdx) {
+    TCELL * current = col->m_Cells;
+    TCELL * prev = nullptr;
+    if(!current) return nullptr;
+
+    while (current && current->m_Col != colIdx && current->m_Row != rowIdx){
         prev = current;
         current =  current->m_Down;
     }
-    return nullptr;
+    if (current) (prev ? prev->m_Down : col->m_Cells) = current->m_Down;
+    return current;
+}
+
+void freeCell (TCELL ** cell)
+{
+    (*cell)->m_Down = nullptr;
+
+    (*cell)->m_Row = -1;
+    (*cell)->m_Col = -1;
+    (*cell)->m_Data = -1;
+
+    free (*cell);
+    *cell = NULL;
+
+}
+//---------------------------------------------------------------------------------------------------------------------//
+void initMatrix(TSPARSEMATRIX *m) {
+    m->m_Rows = nullptr;
+    m->m_Cols = nullptr;
+}
+
+
+void freeRow(TROWCOL ** rowCol)
+{
+    auto cell = (*rowCol)->m_Cells;
+    while (cell)
+    {
+        TCELL * current = cell;
+        cell = cell->m_Right;
+        freeCell(&current);
+    }
+    (*rowCol)->m_Cells = nullptr;
+    TROWCOL *temp = *rowCol;
+    *rowCol = nullptr;
+    free(temp);
+}
+void freeColumn(TROWCOL ** rowCol)
+{
+    TROWCOL *temp = *rowCol;
+    *rowCol = nullptr;
+    free(temp);
+}
+
+
+void freeRows (TROWCOL ** rowCol)
+{
+    if (!*rowCol) return;
+    freeRows(&(*rowCol)->m_Next);
+    freeRow(rowCol);
+
+}
+
+void freeColumns (TROWCOL ** rowCol)
+{
+    if (!*rowCol) return;
+    freeColumns(&(*rowCol)->m_Next);
+    freeColumn(rowCol);
+}
+
+void freeMatrix(TSPARSEMATRIX *m) {
+    freeRows(&m->m_Rows);
+    freeColumns(&m->m_Cols);
+}
+
+//---------------------------------------------------------------------------------------------------------------------//
+void addSetCell(TSPARSEMATRIX *m,
+                int rowIdx,
+                int colIdx,
+                int data) {
+
+   // if(colIdx < 0 || rowIdx < 0) return;
+
+    TROWCOL * currentRow = insertRowCol(&m->m_Rows, rowIdx);
+    TROWCOL * currentColumn = insertRowCol(&m->m_Cols, colIdx);
+
+    TCELL * cell = insertCellRow(currentRow, rowIdx, colIdx, data);
+ //   if(!cell) return;
+    insertCellCol(currentColumn, cell, rowIdx);
+
 }
 
 bool removeCell(TSPARSEMATRIX *m,
                 int rowIdx,
                 int colIdx) {
 
-    if(colIdx < 0 || rowIdx < 0) return false;
+    //if(colIdx < 0 || rowIdx < 0) return false;
 
     TROWCOL * prevRow = nullptr;
     TROWCOL * prevCol = nullptr;
@@ -233,74 +252,81 @@ bool removeCell(TSPARSEMATRIX *m,
     TROWCOL * currentCol = m->m_Cols;
 
     if (!findRowCol( &currentRow,&prevRow, rowIdx)
-    || !findRowCol(&currentCol,&prevCol, colIdx)) return false;
+        || !findRowCol(&currentCol,&prevCol, colIdx)) return false;
 
-    TCELL * cellToRemove = removeColCell (currentCol , rowIdx);
-    if(!cellToRemove || !removeRowCell (currentRow, colIdx)) return false;
+    TCELL * cellToRemove = removeCellRow(currentRow , rowIdx, colIdx);
+    if(!cellToRemove || !removeCellCol(currentCol, rowIdx, colIdx)) return false;
 
     if(!currentRow->m_Cells)
     {
-        prevRow ? prevRow->m_Next : m->m_Rows = currentRow->m_Next;
-        free(currentRow);
+        (prevRow ? prevRow->m_Next : m->m_Rows) = currentRow->m_Next;
+        freeRow(&currentRow);
     }
 
     if(!currentCol->m_Cells)
     {
-        prevCol ? prevCol->m_Next : m->m_Cols  = currentCol->m_Next;
-        free(currentCol);
+        (prevCol ? prevCol->m_Next : m->m_Cols)  = currentCol->m_Next;
+        freeColumn(&currentCol);
     }
 
-    free(cellToRemove);
+    freeCell(&cellToRemove);
     return true;
-}
+}    TSPARSEMATRIX m;
 
-
-void freeRaws (TROWCOL ** rowCol)
+//---
+struct UI
 {
-    if (!*rowCol) return;
-    freeRaws(&(*rowCol)->m_Next);
-
-    for(auto cell = (*rowCol)->m_Cells; cell; )
+    UI () { initMatrix(&m);}
+    void make()
     {
 
-        cell->m_Down = NULL;
-        cell->m_Col = -1;
-        cell->m_Row = -1;
-        cell->m_Data = -1;
+        printf("Matrix:\n");
+        while (1)
+        {
 
-        TCELL * current = cell;
-        cell = cell->m_Right;
-        free (current);
+            int x,y,data;
+            char c;
+            scanf(" %c",&c);
+            if (c == 'x')
+            {
+                return;
+            }
+            if (scanf (" %d %d",  &x,&y)!= 2) break;
+            switch (c) {
+                case '+':
+                    printf("added i guess\n");
+                    addSetCell(&m, x, y, 100);
+                    break;
+                case '-':
+                    //printf("Deleted: %b\n", removeCell(&m, x, y));
+                    break;
+            }
+        }
     }
-    (*rowCol)->m_Cells = NULL;
-    free (*rowCol);
-    *rowCol = NULL;
-}
+~UI() {freeMatrix(&m);}
+    TSPARSEMATRIX m;
+};
 
-void freeColumns (TROWCOL ** rowCol)
-{
-    if (!*rowCol) return;
-    freeColumns(&(*rowCol)->m_Next);
-    free (*rowCol);
-    *rowCol = NULL;
-}
-
-void freeMatrix(TSPARSEMATRIX *m) {
-    freeRaws(&m->m_Rows);
-    freeColumns(&m->m_Cols);
-}
-
+//---------------------------------------------------------------------------------------------------------------------//
 #ifndef __PROGTEST__
 
 int main(int argc, char *argv[]) {
     TSPARSEMATRIX m;
     initMatrix(&m);
-    removeCell(&m, 0, 1);
+
+    UI ui;
+    ui.make();
     addSetCell(&m, 0, 1, 10);
+    removeCell(&m, 0, 1);
+
+       addSetCell(&m, 0, 1, 10);
     addSetCell(&m, 1, 0, 20);
     addSetCell(&m, 1, 5, 30);
     addSetCell(&m, 2, 1, 40);
- //   addSetCell(&m, 2, 1, 50);
+
+
+
+      // addSetCell(&m, 2, 1, 50);
     assert (m.m_Rows
             && m.m_Rows->m_Idx == 0
             && m.m_Rows->m_Cells
@@ -491,6 +517,7 @@ int main(int argc, char *argv[]) {
     assert (m.m_Rows->m_Cells->m_Right == m.m_Cols->m_Next->m_Next->m_Cells);
     assert (m.m_Rows->m_Next->m_Cells == m.m_Cols->m_Next->m_Cells);
     assert (m.m_Rows->m_Next->m_Next->m_Cells == m.m_Cols->m_Next->m_Next->m_Next->m_Cells);
+    freeMatrix(&m);
     freeMatrix(&m);
     return EXIT_SUCCESS;
 }
