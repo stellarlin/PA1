@@ -140,7 +140,7 @@ TCELL * removeCellRow(TROWCOL *row, int rowIdx,  int colIdx){
     TCELL * prev = nullptr;
     if(!current) return nullptr;
 
-    while (current && current->m_Col != colIdx && current->m_Row != rowIdx){
+    while (current && !(current->m_Col != colIdx && current->m_Row != rowIdx)){
         prev = current;
         current =  current->m_Right;
     }
@@ -153,7 +153,7 @@ TCELL *removeCellCol(TROWCOL *col, int rowIdx,  int colIdx) {
     TCELL * prev = nullptr;
     if(!current) return nullptr;
 
-    while (current && current->m_Col != colIdx && current->m_Row != rowIdx){
+    while (current && !(current->m_Col != colIdx && current->m_Row != rowIdx)){
         prev = current;
         current =  current->m_Down;
     }
@@ -273,39 +273,7 @@ bool removeCell(TSPARSEMATRIX *m,
     return true;
 }    TSPARSEMATRIX m;
 
-//---
-struct UI
-{
-    UI () { initMatrix(&m);}
-    void make()
-    {
 
-        printf("Matrix:\n");
-        while (1)
-        {
-
-            int x,y,data;
-            char c;
-            scanf(" %c",&c);
-            if (c == 'x')
-            {
-                return;
-            }
-            if (scanf (" %d %d",  &x,&y)!= 2) break;
-            switch (c) {
-                case '+':
-                    printf("added i guess\n");
-                    addSetCell(&m, x, y, 100);
-                    break;
-                case '-':
-                    //printf("Deleted: %b\n", removeCell(&m, x, y));
-                    break;
-            }
-        }
-    }
-~UI() {freeMatrix(&m);}
-    TSPARSEMATRIX m;
-};
 
 //---------------------------------------------------------------------------------------------------------------------//
 #ifndef __PROGTEST__
@@ -314,8 +282,6 @@ int main(int argc, char *argv[]) {
     TSPARSEMATRIX m;
     initMatrix(&m);
 
-    UI ui;
-    ui.make();
     addSetCell(&m, 0, 1, 10);
     removeCell(&m, 0, 1);
 
