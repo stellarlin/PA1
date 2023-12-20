@@ -140,7 +140,7 @@ TCELL * removeCellRow(TROWCOL *row, int rowIdx,  int colIdx){
     TCELL * prev = nullptr;
     if(!current) return nullptr;
 
-    while (current && !(current->m_Col != colIdx && current->m_Row != rowIdx)){
+    while (current && !(current->m_Col == colIdx && current->m_Row == rowIdx)){
         prev = current;
         current =  current->m_Right;
     }
@@ -153,7 +153,7 @@ TCELL *removeCellCol(TROWCOL *col, int rowIdx,  int colIdx) {
     TCELL * prev = nullptr;
     if(!current) return nullptr;
 
-    while (current && !(current->m_Col != colIdx && current->m_Row != rowIdx)){
+    while (current && !(current->m_Col == colIdx && current->m_Row == rowIdx)){
         prev = current;
         current =  current->m_Down;
     }
@@ -271,7 +271,7 @@ bool removeCell(TSPARSEMATRIX *m,
 
     freeCell(&cellToRemove);
     return true;
-}    TSPARSEMATRIX m;
+}
 
 
 
@@ -280,8 +280,8 @@ bool removeCell(TSPARSEMATRIX *m,
 
 int main(int argc, char *argv[]) {
     TSPARSEMATRIX m;
-    initMatrix(&m);
 
+    initMatrix(&m);
     addSetCell(&m, 0, 1, 10);
     removeCell(&m, 0, 1);
 
@@ -289,8 +289,6 @@ int main(int argc, char *argv[]) {
     addSetCell(&m, 1, 0, 20);
     addSetCell(&m, 1, 5, 30);
     addSetCell(&m, 2, 1, 40);
-
-
 
       // addSetCell(&m, 2, 1, 50);
     assert (m.m_Rows
@@ -483,7 +481,6 @@ int main(int argc, char *argv[]) {
     assert (m.m_Rows->m_Cells->m_Right == m.m_Cols->m_Next->m_Next->m_Cells);
     assert (m.m_Rows->m_Next->m_Cells == m.m_Cols->m_Next->m_Cells);
     assert (m.m_Rows->m_Next->m_Next->m_Cells == m.m_Cols->m_Next->m_Next->m_Next->m_Cells);
-    freeMatrix(&m);
     freeMatrix(&m);
     return EXIT_SUCCESS;
 }
