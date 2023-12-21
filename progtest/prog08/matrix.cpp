@@ -44,13 +44,11 @@ TROWCOL * insertRowCol (TROWCOL ** root, int idx)
     TROWCOL * current = *root;
     TROWCOL * prev = nullptr;
 
-    if(current) {
         while (current && (current->m_Idx <= idx)) {
             if (current->m_Idx == idx) return current;
             prev = current;
             current = current->m_Next;
         }
-    }
 
     auto * newRowCol = initRowCol(idx);
     //if(!newRowCol) return nullptr;
@@ -94,7 +92,6 @@ TCELL * insertCellRow(TROWCOL * row,  int rowIdx, int colIdx, int data)
     TCELL * current = row->m_Cells;
     TCELL * prev = nullptr;
 
-    if(current){
     while (current && current->m_Col <= colIdx)
     {
         if (current->m_Col == colIdx)
@@ -104,7 +101,7 @@ TCELL * insertCellRow(TROWCOL * row,  int rowIdx, int colIdx, int data)
         }
         prev = current;
         current =  current->m_Right;
-    }}
+    }
 
     auto cell = initCell(rowIdx,colIdx,data);
     if(!cell) return cell;
@@ -122,8 +119,8 @@ void  insertCellCol(TROWCOL * col, TCELL * cell, int rowIdx)
     TCELL * prev = nullptr;
 
     if(current) {
-        while (current && current->m_Col <= rowIdx) {
-            if (current->m_Col == rowIdx) return;
+        while (current && current->m_Row <= rowIdx) {
+            if (current->m_Row == rowIdx) return;
 
             prev = current;
             current = current->m_Down;
@@ -228,7 +225,7 @@ void addSetCell(TSPARSEMATRIX *m,
                 int colIdx,
                 int data) {
 
-   // if(colIdx < 0 || rowIdx < 0) return;
+    if(colIdx < 0 || rowIdx < 0) return;
 
     TROWCOL * currentRow = insertRowCol(&m->m_Rows, rowIdx);
     TROWCOL * currentColumn = insertRowCol(&m->m_Cols, colIdx);
@@ -243,7 +240,7 @@ bool removeCell(TSPARSEMATRIX *m,
                 int rowIdx,
                 int colIdx) {
 
-    //if(colIdx < 0 || rowIdx < 0) return false;
+    if(colIdx < 0 || rowIdx < 0) return false;
 
     TROWCOL * prevRow = nullptr;
     TROWCOL * prevCol = nullptr;
@@ -281,6 +278,8 @@ bool removeCell(TSPARSEMATRIX *m,
 int main(int argc, char *argv[]) {
     TSPARSEMATRIX m;
     initMatrix(&m);
+    addSetCell(&m, 0, 1, 10);
+    addSetCell(&m, 0, 1, 10);
     addSetCell(&m, 0, 1, 10);
     addSetCell(&m, 1, 0, 20);
     addSetCell(&m, 1, 5, 30);
