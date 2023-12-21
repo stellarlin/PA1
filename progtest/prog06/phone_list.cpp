@@ -8,6 +8,9 @@
 #define ALPHABET_SIZE 10
 #define MAX_NUMBER_SIZE 20
 
+//----------------------------------------------------------------------------------------//
+// Structures
+
 struct Contact
 {
     char * name = NULL;
@@ -21,6 +24,26 @@ struct ContactContainer
     int size;
 };
 
+struct trieNode
+{
+    ContactContainer  ByNumber;
+    ContactContainer  ByName;
+    trieNode * nextLetter [ALPHABET_SIZE];
+};
+
+enum Result {
+    ACCEPTED = 0,
+    ERROR = 1,
+    EXISTS = 2
+};
+//----------------------------------------------------------------------------------------//
+// Container Functions
+
+// Initialize the ContactContainer
+// Input: ContactContainer pointer
+// Output: true if successful, false otherwise
+// Description: Initializes the count, size, and allocates memory for data array.
+
 bool initContacts (ContactContainer * container)
 {
     container->count = 0;
@@ -32,15 +55,11 @@ bool initContacts (ContactContainer * container)
     return true;
 }
 
-struct trieNode
-{
-    ContactContainer  ByNumber;
-    ContactContainer  ByName;
-    trieNode * nextLetter [ALPHABET_SIZE];
-};
+// Create a new trie node
+// Input: None
+// Output: Pointer to the newly created trieNode
+// Description: Allocates memory for a new trieNode and initializes its members.
 
-
-// Function to create a new trie node
 trieNode * createNode() {
     auto * newNode = (trieNode *)malloc(sizeof(trieNode));
     if (!newNode) return NULL;
@@ -57,11 +76,16 @@ trieNode * createNode() {
     return newNode;
 }
 
+// Compare two Contact structures for equality
+// Input: Two Contact pointers
+// Output: true if equal, false otherwise
 bool equal(Contact * a, Contact *b) {
     return strcmp(a->name, b->name) == 0 && strcmp(a->number, b->number) ==0;
 }
 
-
+// Allocate memory for a name copy
+// Input: New name, size of the name, pointer to store the result
+// Output: true if successful, false otherwise
 bool addName (char * newName, size_t size,  char ** contactName)
 {
     // Allocate exactly the amount of memory needed
@@ -75,6 +99,10 @@ bool addName (char * newName, size_t size,  char ** contactName)
     return true;
 }
 
+// Copy the content of a Contact
+// Input: Pointer to the original Contact structure
+// Output: Copied Contact structure
+// Description: Creates a deep copy of the Contact structure.
 Contact copyContact(const Contact *original) {
     Contact copy;
 
@@ -85,7 +113,10 @@ Contact copyContact(const Contact *original) {
     return copy;
 }
 
-
+// Reallocate memory for the ContactContainer
+// Input: ContactContainer pointer
+// Output: Updated ContactContainer pointer after reallocation
+// Description: Doubles the size of the data array if it's full.
 ContactContainer * reallocContainer  (ContactContainer * container)
 {
     container->size *= 2;
@@ -98,6 +129,10 @@ ContactContainer * reallocContainer  (ContactContainer * container)
     return container;
 }
 
+// Insert a contact into the ContactContainer
+// Input: ContactContainer pointer, pointer to the contact to be inserted
+// Output: true if successful, false otherwise
+// Description: Inserts a contact into the ContactContainer, reallocates memory if needed.
 bool insertContactContainer (ContactContainer * container, Contact * contact)
 {
     container->data[container->count++] = copyContact(contact);
@@ -107,6 +142,9 @@ bool insertContactContainer (ContactContainer * container, Contact * contact)
     return true;
 }
 
+// Check if a contact exists in the ContactContainer
+// Input: ContactContainer pointer, pointer to the contact to be checked
+// Output: true if the contact exists, false otherwise
 bool existsInContainer (ContactContainer * container, Contact * contact)
 {
     for (int i = 0; i < container->count; i++)
@@ -116,6 +154,9 @@ bool existsInContainer (ContactContainer * container, Contact * contact)
     return false;
 }
 
+// Add unique contacts from src to dest
+// Input: Source and destination ContactContainers
+// Output: true if successful, false otherwise
 bool addUnique (ContactContainer * src, ContactContainer * dest)
 {
     for (int i = 0; i < src->count; i++)
@@ -127,8 +168,13 @@ bool addUnique (ContactContainer * src, ContactContainer * dest)
     return true;
 }
 
+//----------------------------------------------------------------------------------------//
+// Free memory functions
 
-// Function to free the dynamically allocated memory inside a Contact structure
+// Free Contact
+// Input: Pointer to the Contact structure
+// Output: None
+// Description: Frees the memory occupied by the name field.
 void freeContact( Contact *contact) {
     // Check if the name field is not NULL before freeing
     if (contact->name != NULL) {
@@ -138,12 +184,22 @@ void freeContact( Contact *contact) {
 }
 
 
-void freeContainer (ContactContainer * container)
-{
-    for (int i = 0; i < container->count; i++) freeContact(&container->data[i]);
-    // Free the contacts array
-    free(container->data);
+// Free ContactContainer
+// Input: Pointer to the ContactContainer to be freed
+// Output: None
+// Description: Frees the array of contacts and then frees the memory occupied by the name fields of all contacts
+//              in the ContactContainer.
+void freeContainer(ContactContainer* container) {
+    for (int i = 0; i < container->count; i++) {
+        freeContact(&container->data[i]); // Free individual contact names
+    }
+    free(container->data); // Free the contacts array
 }
+
+// Free a trieNode and its child nodes
+// Input: Pointer to the trieNode pointer
+// Output: None
+// Description: Recursively frees the trieNode and its child nodes.
 
 void freeTrieNode(trieNode ** node) {
     if (*node == NULL) {
@@ -163,6 +219,9 @@ void freeTrieNode(trieNode ** node) {
     *node = NULL;
 }
 
+// Free the entire contact book starting from the root
+// Input: Pointer to the trieNode pointer
+// Output: None
 void freeBook(trieNode ** root ) {
     if (*root == NULL) {
         return;
@@ -172,12 +231,13 @@ void freeBook(trieNode ** root ) {
     *root = NULL;
 }
 
-enum Result {
-    ACCEPTED = 0,
-    ERROR = 1,
-    EXISTS = 2
-};
+//----------------------------------------------------------------------------------------//
+// Insert Functions
 
+// Read a name from input
+// Input: Pointer to store the name
+// Output: true if successful, false otherwise
+// Description: Reads a name from input and allocates memory for it.
 bool readName (char ** name ) {
     int size = INITIAL_SIZE;
     int index = 0;
@@ -224,6 +284,9 @@ bool readName (char ** name ) {
     return strlen(*name) > 0;
 }
 
+// Read a number from input
+// Input: Pointer to store the number
+// Output: true if successful, false otherwise
 bool readNumber (char * number) {
     int index = 0;
     char buffer [MAX_NUMBER_SIZE + 1] = "";
@@ -248,7 +311,9 @@ bool readNumber (char * number) {
     return strlen(number) > 0;
 }
 
-
+// Insert a contact into the contact book by number
+// Input: Pointer to the contact, pointer to the trie root
+// Output: Result of the operation
 Result insertNumber(Contact * contact, trieNode * root ) {
     trieNode * current = root;
     for (size_t i = 0; i < strlen(contact->number); ++i) {
@@ -266,6 +331,9 @@ Result insertNumber(Contact * contact, trieNode * root ) {
     return insertContactContainer(&current->ByNumber, contact) ? ACCEPTED : ERROR;
 }
 
+// Decode T9 encoding for a letter
+// Input: Letter to be decoded
+// Output: T9 encoding number
 int decodeT9(char letter) {
     if (letter == ' ') return 1;
     // T9 encoding mapping
@@ -317,6 +385,10 @@ int decodeT9(char letter) {
 return 0;
 }
 
+// Insert a contact into the contact book by name
+// Input: Pointer to the contact, pointer to the trie root
+// Output: Result of the operation
+// Description: Inserts a contact using the T9 encoded name.
 Result insertName(Contact * contact, trieNode * root ) {
     trieNode * current = root;
     for (size_t i = 0; i < strlen(contact->name); ++i) {
@@ -359,6 +431,15 @@ bool insertContact(trieNode * root ) {
     return true;
 }
 
+
+//----------------------------------------------------------------------------------------//
+// Searching functions
+
+
+// Store search results
+// Input: Pointer to the current trieNode, pointer to the result
+// Output: true if successful, false otherwise
+// Description: Recursively stores search results in the searchResult container.
 bool storeResult (trieNode * current, ContactContainer * searchResult)
 {
     if (!current) {
@@ -370,13 +451,17 @@ bool storeResult (trieNode * current, ContactContainer * searchResult)
         storeResult(current->nextLetter[i],  searchResult);
     }
 
+    // Store unique contacts from current node in the result
     if(!addUnique(&current->ByNumber, searchResult)) return false;
     if(!addUnique(&current->ByName, searchResult)) return false;
 
     return true;
 }
 
-
+// Print the search result
+// Input: Pointer to the searchResult container
+// Output: None
+// Description: Prints the search result.
 void printResult(ContactContainer * result) {
     if (result->count <= RESULT_SIZE) {
         for (int i = 0; i < result->count; i++) {
@@ -388,6 +473,10 @@ void printResult(ContactContainer * result) {
 
 }
 
+// Search for a contact in the contact book
+// Input: Pointer to the trie root
+// Output: true if successful, false otherwise
+// Description: Searches for a contact in the contact book and prints the result.
 bool searchContact(trieNode * root ) {
    ContactContainer searchResult;
    if(!initContacts(&searchResult)) return false;
@@ -417,6 +506,17 @@ bool searchContact(trieNode * root ) {
     return true;
 }
 
+
+//----------------------------------------------------------------------------------------//
+// Main Functions
+
+// Read and process input commands
+// Input: Pointer to the trie root
+// Output: None
+// Description: Reads input commands from standard input and performs the
+//              corresponding operations based on the provided commands:
+//              '+' is used to insert a new contact (number, name) into the contact book
+//              '?' is used to search for contacts based on a given number sequence.
 void read_input (trieNode * root )
 {
     char c;
@@ -446,8 +546,6 @@ void read_input (trieNode * root )
        }
    }
 }
-
-
 
 int main ()
 {
