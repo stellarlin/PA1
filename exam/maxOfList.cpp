@@ -34,8 +34,42 @@ void delList ( TITEM * l ) {
 }
 #endif /* __PROGTEST__ */
 
+
+TITEM * greatest (TITEM * a, TITEM * b)
+{
+    auto curr_a = a;
+    auto curr_b = b;
+    TITEM * max = nullptr;
+    while(curr_a && curr_b)
+    {
+        if (!isdigit(curr_a->m_Digit) || !isdigit(curr_b->m_Digit)) return nullptr;
+        if (curr_a->m_Digit != curr_b->m_Digit){
+            max = curr_a->m_Digit > curr_b->m_Digit ? a : b;
+        }
+
+            curr_a = curr_a->m_Next;
+            curr_b = curr_b->m_Next;
+    }
+
+    if (curr_a && !curr_b) max = a;
+    else if (!curr_a && curr_b) max = b;
+
+    return !max ? a : max;
+}
+
 TITEM * maxOf ( TITEM ** x, int nr ) {
-    /*To Do*/
+    TITEM * max = nullptr;
+    if(!nr) return max;
+    for (int i = 0; i < nr; i++)
+    {
+        if(!x[i]) return nullptr;
+        if (!max) {
+            max = x[i];
+            continue;
+        }
+     if(!(max = greatest(max, x[i])))break;
+    }
+    return max;
 }
 
 #ifndef __PROGTEST__
