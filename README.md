@@ -1,4 +1,4 @@
 # prykhsof PA1
-This repository is used as an archive of files that I need during my PA1/PA2 course at the CVUT in 2022/2023
+This repository is used as an archive of files that I need during my PA1/PA2 course at the CVUT in 2022/2023 and 2023/2024
 
 Press F to pay respect 
